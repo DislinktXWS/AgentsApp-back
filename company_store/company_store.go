@@ -27,7 +27,7 @@ func New() (*CompanyStore, error) {
 		return nil, err
 	}
 	ts.db = db
-	err = ts.db.AutoMigrate(&Company{})
+	err = ts.db.AutoMigrate(&Company{}, &JobPosition{})
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +39,12 @@ func (ts *CompanyStore) CreateCompany(companyReq dto.RequestCompany) int {
 	company := companyMapper(&companyReq)
 	ts.db.Create(&company)
 	return company.ID
+}
+
+func (ts *CompanyStore) CreateJobPosition(jobPositionReq dto.RequestJobPosition) int {
+	jobPosition := jobPositionMapper(&jobPositionReq)
+	ts.db.Create(&jobPosition)
+	return jobPosition.ID
 }
 
 func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
@@ -56,8 +62,8 @@ func (ts *CompanyStore) GetAllCompanies() []Company {
 	return companies
 }
 
-func (ts *CompanyStore) GetCompany(id int) (Company, error) {
-	var company Company
+func (ts *CompanyStore) GetCompany(id int) ([]Company, error) {
+	var company []Company
 	ownerID := strconv.Itoa(id)
 	result := ts.db.Find(&company, "owner_id = "+ownerID)
 
@@ -65,7 +71,28 @@ func (ts *CompanyStore) GetCompany(id int) (Company, error) {
 		return company, nil
 	}
 
-	return Company{}, fmt.Errorf("company with ownerId=%d not found", id)
+	return company, fmt.Errorf("company with ownerId=%d not found", id)
+}
+
+func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
+	var jobPositions []JobPosition
+	companyID := strconv.Itoa(id)
+	result := ts.db.Find(&jobPositions, "company_id = "+companyID)
+
+	if result.RowsAffected > 0 {
+		return jobPositions, nil
+	}
+
+	return jobPositions, fmt.Errorf("job position with ownerId = %d not found", id)
+}
+
+func (ts *CompanyStore) DeleteJobPosition(id int) error {
+	result := ts.db.Delete(&JobPosition{}, id)
+	if result.RowsAffected > 0 {
+		return nil
+	}
+
+	return fmt.Errorf("job position with id = %d not found", id)
 }
 
 func (ts *CompanyStore) Close() error {

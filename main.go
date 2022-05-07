@@ -24,10 +24,16 @@ func main() {
 
 	defer server.CloseDB()
 
+	//COMPANY HANDLERS
 	router.HandleFunc("/company", server.createCompanyHandler).Methods("POST")
 	router.HandleFunc("/company", server.updateCompanyHandler).Methods("PUT")
 	router.HandleFunc("/company", server.getAllCompaniesHandler).Methods("GET")
 	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyHandler).Methods("GET")
+
+	//JOB POSITION HANDLERS
+	router.HandleFunc("/jobPosition", server.createJobPositionHandler).Methods("POST")
+	router.HandleFunc("/jobPosition/{id:[0-9a-zA-Z]+}", server.getJobPositionHandler).Methods("GET")
+	router.HandleFunc("/jobPosition/{id:[0-9a-zA-Z]+}", server.deleteJobPositionHandler).Methods("DELETE")
 
 	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: router}
 	go func() {
