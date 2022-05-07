@@ -1,8 +1,10 @@
 package company_store
 
-import "modules/dto"
+import (
+	"modules/dto"
+)
 
-func companyMapper(companyReq *dto.RequestCompany) Company {
+func CompanyMapper(companyReq *dto.RequestCompany) Company {
 	company := Company{
 		ID:                  companyReq.ID,
 		CompanyCulture:      companyReq.CompanyCulture,

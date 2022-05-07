@@ -2,11 +2,13 @@ package company_store
 
 import "modules/dto"
 
-func jobPositionMapper(jobPositionReq *dto.RequestJobPosition) JobPosition {
+func JobPositionMapper(jobInterviewReq *dto.RequestJobPosition) JobPosition {
 	jobPosition := JobPosition{
-		Position:  jobPositionReq.Position,
-		Salary:    jobPositionReq.Salary,
-		CompanyID: jobPositionReq.CompanyID,
+		Description:  jobInterviewReq.Description,
+		Skills:       jobInterviewReq.Skills,
+		WorkingHours: jobInterviewReq.WorkingHours,
+		Position:     jobInterviewReq.Position,
+		CompanyID:    jobInterviewReq.CompanyID,
 	}
 	return jobPosition
 }
