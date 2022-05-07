@@ -5,10 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="be90c884-3e30-4e0c-a91a-4246481a951e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/company_store/jobPosition_mapper.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/company_store/company_mapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/company_mapper.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_store/company_store.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/company_store.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/company_store/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/model.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dto/companyDTO.go" beforeDir="false" afterPath="$PROJECT_DIR$/dto/companyDTO.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
@@ -93,9 +94,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/company_store/company_store.go</url>
-          <line>45</line>
-          <option name="timeStamp" value="6" />
+          <url>file://$PROJECT_DIR$/company_handler.go</url>
+          <line>81</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

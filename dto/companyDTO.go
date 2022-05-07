@@ -19,3 +19,9 @@ type RequestCompany struct {
 type ResponseId struct {
 	Id int `json:"id"`
 }
+
+type RequestJobPosition struct {
+	Position  string `json:"position"`
+	Salary    int    `json:"salary"`
+	CompanyID int
+}

@@ -22,7 +22,7 @@ func (ts *CompanyServer) createCompanyHandler(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	rt, err := decodeBody(req.Body)
+	rt, err := decodeCompany(req.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -44,7 +44,7 @@ func (ts *CompanyServer) updateCompanyHandler(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	rt, err := decodeBody(req.Body)
+	rt, err := decodeCompany(req.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -55,7 +55,6 @@ func (ts *CompanyServer) updateCompanyHandler(w http.ResponseWriter, req *http.R
 }
 
 func (ts *CompanyServer) getCompanyHandler(w http.ResponseWriter, req *http.Request) {
-
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetCompany(id)
 
@@ -67,12 +66,65 @@ func (ts *CompanyServer) getCompanyHandler(w http.ResponseWriter, req *http.Requ
 	renderJSON(w, task)
 }
 
+func (ts *CompanyServer) getJobPositionHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.GetJobPosition(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) deleteJobPositionHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	err := ts.store.DeleteJobPosition(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+}
+
 func (ts *CompanyServer) getAllCompaniesHandler(w http.ResponseWriter, req *http.Request) {
 	allCompanies := ts.store.GetAllCompanies()
 	renderJSON(w, allCompanies)
 }
 
-func decodeBody(r io.Reader) (*dto.RequestCompany, error) {
+func (ts *CompanyServer) createJobPositionHandler(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeJobPosition(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id := ts.store.CreateJobPosition(*rt)
+	renderJSON(w, dto.ResponseId{Id: id})
+}
+
+func decodeJobPosition(r io.Reader) (*dto.RequestJobPosition, error) {
+	dec := json.NewDecoder(r)
+	dec.DisallowUnknownFields()
+	var rc dto.RequestJobPosition
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodeCompany(r io.Reader) (*dto.RequestCompany, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	var rc dto.RequestCompany
