@@ -20,8 +20,27 @@ type ResponseId struct {
 	Id int `json:"id"`
 }
 
-type RequestJobPosition struct {
+type RequestJobSalary struct {
 	Position  string `json:"position"`
 	Salary    int    `json:"salary"`
+	CompanyID int
+}
+
+type RequestJobInterview struct {
+	Position   string `json:"position"`
+	Impression string `json:"impression"`
+	CompanyID  int
+}
+
+type RequestJobPosition struct {
+	Position     string `json:"position"`
+	WorkingHours string `json:"workingHours"`
+	Description  string `json:"description"`
+	Skills       string `json:"skills"`
+	CompanyID    int
+}
+
+type RequestComment struct {
+	Content   string `json:"content"`
 	CompanyID int
 }
