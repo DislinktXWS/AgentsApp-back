@@ -2,47 +2,53 @@ package main
 
 import (
 	"context"
+	"github.com/gorilla/mux"
 	"log"
-	"modules/handlers"
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 )
 
 func main() {
-	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodbye(l)
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
-	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	sm.Handle("/goodbye", gh)
-
-	s := &http.Server{
-		Addr:         ":9090",
-		Handler:      sm,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
-		IdleTimeout:  120 * time.Second,
+	router := mux.NewRouter()
+	router.StrictSlash(true)
+	server, err := NewCompanyServer()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
+	defer server.CloseDB()
+
+	router.HandleFunc("/company", server.createCompanyHandler).Methods("POST")
+	router.HandleFunc("/company", server.getAllCompaniesHandler).Methods("GET")
+	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyHandler).Methods("GET")
+
+	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: router}
 	go func() {
-		err := s.ListenAndServe()
-		if err != nil {
-			l.Fatal(err)
+		log.Println("server starting")
+		if err := srv.ListenAndServe(); err != nil {
+			if err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
 		}
 	}()
-	sigChan := make(chan os.Signal)
-	signal.Notify(sigChan, os.Interrupt)
-	signal.Notify(sigChan, os.Kill)
 
-	sig := <-sigChan
-	l.Println("Recieved terminate, graceful shutdown", sig)
+	<-quit
 
-	tc, err := context.WithTimeout(context.Background(), 30*time.Second)
-	if err != nil {
-		l.Fatal(err)
+	log.Println("service shutting down ...")
+
+	// gracefully stop server
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal(err)
 	}
-	s.Shutdown(tc)
+
+	log.Println("server stopped")
 }
