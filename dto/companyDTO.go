@@ -1,6 +1,7 @@
 package dto
 
 type RequestCompany struct {
+	ID                  int    `json:"ID"`
 	Name                string `json:"name"`
 	Phone               string `json:"phone"`
 	Email               string `json:"email"`

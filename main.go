@@ -25,6 +25,7 @@ func main() {
 	defer server.CloseDB()
 
 	router.HandleFunc("/company", server.createCompanyHandler).Methods("POST")
+	router.HandleFunc("/company", server.updateCompanyHandler).Methods("PUT")
 	router.HandleFunc("/company", server.getAllCompaniesHandler).Methods("GET")
 	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyHandler).Methods("GET")
 
