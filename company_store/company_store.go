@@ -41,6 +41,15 @@ func (ts *CompanyStore) CreateCompany(companyReq dto.RequestCompany) int {
 	return company.ID
 }
 
+func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
+	//ts.db.Model(&Company{}).Updates(&company)
+	company := &Company{}
+	ts.db.First(&company, companyReq.ID)
+	*company = companyMapper(&companyReq)
+	ts.db.Save(&company)
+	return company.ID
+}
+
 func (ts *CompanyStore) GetAllCompanies() []Company {
 	var companies []Company
 	ts.db.Find(&companies)

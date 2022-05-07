@@ -4,6 +4,7 @@ import "modules/dto"
 
 func companyMapper(companyReq *dto.RequestCompany) Company {
 	company := Company{
+		ID:                  companyReq.ID,
 		CompanyCulture:      companyReq.CompanyCulture,
 		Name:                companyReq.Name,
 		YearOfEstablishment: companyReq.YearOfEstablishment,
