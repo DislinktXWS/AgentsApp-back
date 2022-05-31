@@ -27,7 +27,7 @@ func New() (*CompanyStore, error) {
 		return nil, err
 	}
 	ts.db = db
-	err = ts.db.AutoMigrate(&Company{}, &JobSalary{}, &JobInterview{})
+	err = ts.db.AutoMigrate(&Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{})
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +48,12 @@ func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
 	*company = CompanyMapper(&companyReq)
 	ts.db.Save(&company)
 	return company.ID
+}
+
+func (ts *CompanyStore) AcceptCompany(companyReq dto.RequestAcceptCompany) int {
+	ts.db.Model(&Company{}).Where("id = ?", companyReq.ID).Update("accepted", companyReq.Accept)
+	ts.db.Model(&Company{}).Where("id = ?", companyReq.ID).Update("checked", true)
+	return companyReq.ID
 }
 
 func (ts *CompanyStore) GetAllCompanies() []Company {

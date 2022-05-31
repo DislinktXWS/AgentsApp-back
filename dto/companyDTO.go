@@ -44,3 +44,8 @@ type RequestComment struct {
 	Content   string `json:"content"`
 	CompanyID int
 }
+
+type RequestAcceptCompany struct {
+	ID     int  `json:"ID"`
+	Accept bool `json:"accept"`
+}

@@ -13,6 +13,8 @@ type Company struct {
 	CompanyCulture      string         `json:"companyCulture"`
 	Description         string         `json:"description"`
 	Website             string         `json:"website"`
+	Accepted            bool           `json:"accepted"`
+	Checked             bool           `json:"checked"`
 	JobSalary           []JobSalary    `gorm:"foreignKey:CompanyID"`
 	JobInterview        []JobInterview `gorm:"foreignKey:CompanyID"`
 	JobPosition         []JobPosition  `gorm:"foreignKey:CompanyID"`

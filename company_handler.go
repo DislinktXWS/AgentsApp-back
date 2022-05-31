@@ -54,6 +54,28 @@ func (ts *CompanyServer) updateCompanyHandler(w http.ResponseWriter, req *http.R
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
+func (ts *CompanyServer) acceptCompanyHandler(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeAcceptRequest(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id := ts.store.AcceptCompany(*rt)
+	renderJSON(w, dto.ResponseId{Id: id})
+}
+
 func (ts *CompanyServer) getCompanyHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetCompany(id)
@@ -214,6 +236,16 @@ func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Requ
 	}
 
 	renderJSON(w, task)
+}
+
+func decodeAcceptRequest(r io.Reader) (*dto.RequestAcceptCompany, error) {
+	dec := json.NewDecoder(r)
+	dec.DisallowUnknownFields()
+	var rc dto.RequestAcceptCompany
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
 }
 
 func decodeComment(r io.Reader) (*dto.RequestComment, error) {

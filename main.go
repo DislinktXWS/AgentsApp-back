@@ -29,6 +29,7 @@ func main() {
 	router.HandleFunc("/company", server.updateCompanyHandler).Methods("PUT")
 	router.HandleFunc("/company", server.getAllCompaniesHandler).Methods("GET")
 	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyHandler).Methods("GET")
+	router.HandleFunc("/company/accept", server.acceptCompanyHandler).Methods("PUT")
 
 	//JOB SALARY HANDLERS
 	router.HandleFunc("/jobSalary", server.createJobSalaryHandler).Methods("POST")

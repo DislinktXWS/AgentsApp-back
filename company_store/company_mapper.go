@@ -19,6 +19,8 @@ func CompanyMapper(companyReq *dto.RequestCompany) Company {
 		Email:               companyReq.Email,
 		Website:             companyReq.Website,
 		OwnerID:             companyReq.OwnerID,
+		Accepted:            false,
+		Checked:             false,
 	}
 	return company
 }
