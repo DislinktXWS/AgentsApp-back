@@ -48,6 +48,11 @@ func main() {
 	router.HandleFunc("/comment", server.createCommentHandler).Methods("POST")
 	router.HandleFunc("/comment/{id:[0-9a-zA-Z]+}", server.getCommentHandler).Methods("GET")
 
+	//AUTH HANDLER
+	router.HandleFunc("/registration", server.registerHandler).Methods("POST")
+	router.HandleFunc("/login", server.loginHandler).Methods("POST")
+	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
+
 	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: router}
 	go func() {
 		log.Println("server starting")

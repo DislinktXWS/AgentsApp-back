@@ -226,6 +226,53 @@ func (ts *CompanyServer) createCommentHandler(w http.ResponseWriter, req *http.R
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
+func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeUser(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user := ts.store.RegisterUser(*rt)
+	renderJSON(w, dto.ResponseId{Id: user.ID})
+}
+
+func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeLogin(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	token, status := ts.store.LoginUser(*rt)
+	if status != 200 {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	renderJSON(w, dto.ResponseLogin{Token: token})
+}
+
 func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetComment(id)
@@ -234,14 +281,44 @@ func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Requ
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
 	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) validateHandler(w http.ResponseWriter, req *http.Request) {
+	token, _ := mux.Vars(req)["token"]
+	status, username, role := ts.store.Validate(token)
+	if status != 200 {
+		http.Error(w, string(status), http.StatusNotFound)
+		return
+	}
+	renderJSON(w, dto.ResponseValidate{Username: username, Role: role})
+
 }
 
 func decodeAcceptRequest(r io.Reader) (*dto.RequestAcceptCompany, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	var rc dto.RequestAcceptCompany
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodeUser(r io.Reader) (*dto.RequestUser, error) {
+	dec := json.NewDecoder(r)
+	dec.DisallowUnknownFields()
+	var rc dto.RequestUser
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodeLogin(r io.Reader) (*dto.RequestLogin, error) {
+	dec := json.NewDecoder(r)
+	dec.DisallowUnknownFields()
+	var rc dto.RequestLogin
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
 	}

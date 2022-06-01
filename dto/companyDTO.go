@@ -1,5 +1,9 @@
 package dto
 
+import (
+	"time"
+)
+
 type RequestCompany struct {
 	ID                  int    `json:"ID"`
 	Name                string `json:"name"`
@@ -13,7 +17,7 @@ type RequestCompany struct {
 	CompanyCulture      string `json:"companyCulture"`
 	Description         string `json:"description"`
 	Website             string `json:"website"`
-	OwnerID             string
+	OwnerID             int    `json:"ownerID"`
 }
 
 type ResponseId struct {
@@ -48,4 +52,46 @@ type RequestComment struct {
 type RequestAcceptCompany struct {
 	ID     int  `json:"ID"`
 	Accept bool `json:"accept"`
+}
+
+type Gender int64
+
+const (
+	Male Gender = iota
+	Female
+)
+
+type Role int64
+
+const (
+	Regular Role = iota
+	Admin
+	Owner
+)
+
+type RequestUser struct {
+	ID          int       `json:"id"`
+	Username    string    `json:"username"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	Birthday    time.Time `json:"birthday"`
+	Gender      Gender    `json:"gender"`
+	Email       string    `json:"email"`
+	PhoneNumber string    `json:"phoneNumber"`
+	Password    string    `json:"password"`
+	Role        Role      `json:"role"`
+}
+
+type RequestLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type ResponseLogin struct {
+	Token string `json:"token"`
+}
+
+type ResponseValidate struct {
+	Username string `json:"username"`
+	Role     int    `json:"role"`
 }

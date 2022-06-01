@@ -1,5 +1,7 @@
 package company_store
 
+import "time"
+
 type Company struct {
 	ID                  int            `json:"id"`
 	Name                string         `json:"name"`
@@ -18,7 +20,7 @@ type Company struct {
 	JobSalary           []JobSalary    `gorm:"foreignKey:CompanyID"`
 	JobInterview        []JobInterview `gorm:"foreignKey:CompanyID"`
 	JobPosition         []JobPosition  `gorm:"foreignKey:CompanyID"`
-	OwnerID             string
+	OwnerID             int            `json:"ownerID"`
 }
 
 type JobSalary struct {
@@ -48,4 +50,33 @@ type Comment struct {
 	ID        int    `json:"id"`
 	Content   string `json:"content"`
 	CompanyID int    `json:"companyID"`
+}
+
+type Gender int64
+
+const (
+	Male Gender = iota
+	Female
+)
+
+type Role int64
+
+const (
+	Regular Role = iota
+	Admin
+	Owner
+)
+
+type User struct {
+	ID          int       `json:"id"`
+	Username    string    `json:"username"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	Birthday    time.Time `json:"birthday"`
+	Gender      Gender    `json:"gender"`
+	Email       string    `json:"email"`
+	PhoneNumber string    `json:"phoneNumber"`
+	Password    string    `json:"password"`
+	Role        Role      `json:"role"`
+	Company     []Company `gorm:"foreignKey:OwnerID"`
 }
