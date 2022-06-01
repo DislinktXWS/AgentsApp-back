@@ -5,6 +5,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"modules/dto"
+	"modules/utils"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -27,7 +29,7 @@ func New() (*CompanyStore, error) {
 		return nil, err
 	}
 	ts.db = db
-	err = ts.db.AutoMigrate(&Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{})
+	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{})
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +55,13 @@ func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
 func (ts *CompanyStore) AcceptCompany(companyReq dto.RequestAcceptCompany) int {
 	ts.db.Model(&Company{}).Where("id = ?", companyReq.ID).Update("accepted", companyReq.Accept)
 	ts.db.Model(&Company{}).Where("id = ?", companyReq.ID).Update("checked", true)
+	if companyReq.Accept {
+		var company Company
+		result := ts.db.Find(&company, Company{ID: companyReq.ID})
+		if result.RowsAffected > 0 {
+			ts.db.Model(&User{}).Where("id = ?", company.OwnerID).Update("role", 2)
+		}
+	}
 	return companyReq.ID
 }
 
@@ -143,6 +152,28 @@ func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	return jobInterview.ID
 }
 
+func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {
+	user := UserMapper(&userReq)
+	ts.db.Create(&user)
+	return user
+}
+
+func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
+	var user User
+	result := ts.db.Find(&user, User{Username: loginReq.Username})
+	if result.RowsAffected == 0 {
+		return "", http.StatusNotFound
+	}
+	match := utils.CheckPasswordHash(loginReq.Password, user.Password)
+	if !match {
+		return "", http.StatusNotFound
+	}
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+	token, _ := wrapper.GenerateToken(&user)
+	return token, http.StatusOK
+}
+
 func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {
 	var comments []Comment
 	ownerID := strconv.Itoa(id)
@@ -153,6 +184,21 @@ func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {
 	}
 
 	return comments, fmt.Errorf("company with id=%d does not have any new comments", id)
+}
+
+func (ts *CompanyStore) Validate(token string) (int, string, int) {
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+	claims, err := wrapper.ValidateToken(token)
+	if err != nil {
+		return http.StatusBadRequest, "", -1
+	}
+	var user User
+	result := ts.db.Find(&user, User{Username: claims.Username})
+	if result.RowsAffected == 0 {
+		return http.StatusBadRequest, "", -1
+	}
+	return http.StatusOK, claims.Username, claims.Role
 }
 
 func (ts *CompanyStore) Close() error {
