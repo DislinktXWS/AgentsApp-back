@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -15,6 +16,10 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
+	ch := handlers.CORS(handlers.AllowedOrigins([]string{"http://localhost:4200"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Authorization", "Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin"}),
+	)
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 	server, err := NewCompanyServer()
@@ -28,7 +33,8 @@ func main() {
 	router.HandleFunc("/company", server.createCompanyHandler).Methods("POST")
 	router.HandleFunc("/company", server.updateCompanyHandler).Methods("PUT")
 	router.HandleFunc("/company", server.getAllCompaniesHandler).Methods("GET")
-	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyHandler).Methods("GET")
+	router.HandleFunc("/company/{id:[0-9a-zA-Z]+}/", server.getCompanyByIDHandler).Methods("GET")
+	router.HandleFunc("/companyByOwner/{id:[0-9a-zA-Z]+}/", server.getOwnersCompaniesHandler).Methods("GET")
 	router.HandleFunc("/company/accept", server.acceptCompanyHandler).Methods("PUT")
 
 	//JOB SALARY HANDLERS
@@ -53,7 +59,7 @@ func main() {
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
 	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
 
-	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: router}
+	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router)}
 	go func() {
 		log.Println("server starting")
 		if err := srv.ListenAndServe(); err != nil {

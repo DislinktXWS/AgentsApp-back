@@ -71,10 +71,22 @@ func (ts *CompanyStore) GetAllCompanies() []Company {
 	return companies
 }
 
-func (ts *CompanyStore) GetCompany(id int) ([]Company, error) {
+func (ts *CompanyStore) GetOwnersCompanies(id int) ([]Company, error) {
 	var company []Company
 	ownerID := strconv.Itoa(id)
 	result := ts.db.Find(&company, "owner_id = "+ownerID)
+
+	if result.RowsAffected > 0 {
+		return company, nil
+	}
+
+	return company, fmt.Errorf("company with ownerId=%d not found", id)
+}
+
+func (ts *CompanyStore) GetCompanyById(id int) (Company, error) {
+	var company Company
+	companyID := strconv.Itoa(id)
+	result := ts.db.Find(&company, "id = "+companyID)
 
 	if result.RowsAffected > 0 {
 		return company, nil
@@ -176,8 +188,8 @@ func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
 
 func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {
 	var comments []Comment
-	ownerID := strconv.Itoa(id)
-	result := ts.db.Find(&comments, "company_id = "+ownerID)
+	companyID := strconv.Itoa(id)
+	result := ts.db.Find(&comments, "company_id = "+companyID)
 
 	if result.RowsAffected > 0 {
 		return comments, nil
@@ -186,19 +198,19 @@ func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {
 	return comments, fmt.Errorf("company with id=%d does not have any new comments", id)
 }
 
-func (ts *CompanyStore) Validate(token string) (int, string, int) {
+func (ts *CompanyStore) Validate(token string) (int, int, string, int) {
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
 	claims, err := wrapper.ValidateToken(token)
 	if err != nil {
-		return http.StatusBadRequest, "", -1
+		return http.StatusBadRequest, -1, "", -1
 	}
 	var user User
 	result := ts.db.Find(&user, User{Username: claims.Username})
 	if result.RowsAffected == 0 {
-		return http.StatusBadRequest, "", -1
+		return http.StatusBadRequest, -1, "", -1
 	}
-	return http.StatusOK, claims.Username, claims.Role
+	return http.StatusOK, claims.Id, claims.Username, claims.Role
 }
 
 func (ts *CompanyStore) Close() error {

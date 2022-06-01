@@ -7,15 +7,14 @@ import (
 
 func UserMapper(userReq *dto.RequestUser) User {
 	user := User{
-		ID:          userReq.ID,
 		Email:       userReq.Email,
 		Username:    userReq.Username,
 		Password:    utils.HashPassword(userReq.Password),
-		Birthday:    userReq.Birthday,
-		FirstName:   userReq.FirstName,
+		DateOfBirth: userReq.DateOfBirth,
+		Name:        userReq.Name,
 		Gender:      Gender(userReq.Gender),
-		LastName:    userReq.LastName,
-		PhoneNumber: userReq.PhoneNumber,
+		Surname:     userReq.Surname,
+		Phone:       userReq.Phone,
 		Role:        Role(userReq.Role),
 	}
 	return user

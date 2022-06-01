@@ -76,9 +76,21 @@ func (ts *CompanyServer) acceptCompanyHandler(w http.ResponseWriter, req *http.R
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
-func (ts *CompanyServer) getCompanyHandler(w http.ResponseWriter, req *http.Request) {
+func (ts *CompanyServer) getOwnersCompaniesHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
-	task, err := ts.store.GetCompany(id)
+	task, err := ts.store.GetOwnersCompanies(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) getCompanyByIDHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.GetCompanyById(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -286,12 +298,12 @@ func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Requ
 
 func (ts *CompanyServer) validateHandler(w http.ResponseWriter, req *http.Request) {
 	token, _ := mux.Vars(req)["token"]
-	status, username, role := ts.store.Validate(token)
+	status, id, username, role := ts.store.Validate(token)
 	if status != 200 {
 		http.Error(w, string(status), http.StatusNotFound)
 		return
 	}
-	renderJSON(w, dto.ResponseValidate{Username: username, Role: role})
+	renderJSON(w, dto.ResponseValidate{ID: id, Username: username, Role: role})
 
 }
 
@@ -307,7 +319,6 @@ func decodeAcceptRequest(r io.Reader) (*dto.RequestAcceptCompany, error) {
 
 func decodeUser(r io.Reader) (*dto.RequestUser, error) {
 	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
 	var rc dto.RequestUser
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
@@ -347,7 +358,6 @@ func decodeJobPosition(r io.Reader) (*dto.RequestJobPosition, error) {
 
 func decodeJobInterview(r io.Reader) (*dto.RequestJobInterview, error) {
 	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
 	var rc dto.RequestJobInterview
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
@@ -357,7 +367,6 @@ func decodeJobInterview(r io.Reader) (*dto.RequestJobInterview, error) {
 
 func decodeJobSalary(r io.Reader) (*dto.RequestJobSalary, error) {
 	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
 	var rc dto.RequestJobSalary
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
@@ -367,7 +376,6 @@ func decodeJobSalary(r io.Reader) (*dto.RequestJobSalary, error) {
 
 func decodeCompany(r io.Reader) (*dto.RequestCompany, error) {
 	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
 	var rc dto.RequestCompany
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
