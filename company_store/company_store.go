@@ -2,13 +2,14 @@ package company_store
 
 import (
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"modules/dto"
 	"modules/utils"
 	"net/http"
 	"os"
 	"strconv"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type CompanyStore struct {
