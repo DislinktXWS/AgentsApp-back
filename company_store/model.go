@@ -1,16 +1,12 @@
 package company_store
 
-import "time"
-
 type Company struct {
 	ID                  int            `json:"id"`
 	Name                string         `json:"name"`
 	Phone               string         `json:"phone"`
 	Email               string         `json:"email"`
 	Address             string         `json:"address"`
-	City                string         `json:"city"`
-	Country             string         `json:"country"`
-	YearOfEstablishment int            `json:"yearOfEstablishment"`
+	YearOfEstablishment string         `json:"yearOfEstablishment"`
 	Industry            string         `json:"industry"`
 	CompanyCulture      string         `json:"companyCulture"`
 	Description         string         `json:"description"`
@@ -70,12 +66,12 @@ const (
 type User struct {
 	ID          int       `json:"id"`
 	Username    string    `json:"username"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
-	Birthday    time.Time `json:"birthday"`
+	Name        string    `json:"name"`
+	Surname     string    `json:"surname"`
+	DateOfBirth string    `json:"dateOfBirth"`
 	Gender      Gender    `json:"gender"`
 	Email       string    `json:"email"`
-	PhoneNumber string    `json:"phoneNumber"`
+	Phone       string    `json:"phone"`
 	Password    string    `json:"password"`
 	Role        Role      `json:"role"`
 	Company     []Company `gorm:"foreignKey:OwnerID"`

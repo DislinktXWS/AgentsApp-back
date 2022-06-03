@@ -12,6 +12,7 @@
       <change beforePath="$PROJECT_DIR$/company_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_handler.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_store/company_store.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/company_store.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_store/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/company_store/user_mapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/user_mapper.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dto/companyDTO.go" beforeDir="false" afterPath="$PROJECT_DIR$/dto/companyDTO.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
@@ -103,6 +104,21 @@
           <url>file://$PROJECT_DIR$/company_store/company_store.go</url>
           <line>55</line>
           <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/company_handler.go</url>
+          <line>13</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/company_store/company_store.go</url>
+          <line>74</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/company_handler.go</url>
+          <line>219</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

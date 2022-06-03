@@ -1,18 +1,12 @@
 package dto
 
-import (
-	"time"
-)
-
 type RequestCompany struct {
 	ID                  int    `json:"ID"`
 	Name                string `json:"name"`
 	Phone               string `json:"phone"`
 	Email               string `json:"email"`
 	Address             string `json:"address"`
-	City                string `json:"city"`
-	Country             string `json:"country"`
-	YearOfEstablishment int    `json:"yearOfEstablishment"`
+	YearOfEstablishment string `json:"yearOfEstablishment"`
 	Industry            string `json:"industry"`
 	CompanyCulture      string `json:"companyCulture"`
 	Description         string `json:"description"`
@@ -27,7 +21,7 @@ type ResponseId struct {
 type RequestJobSalary struct {
 	Position  string `json:"position"`
 	Salary    int    `json:"salary"`
-	CompanyID int
+	CompanyID int    `json:"companyID"`
 }
 
 type RequestJobInterview struct {
@@ -46,7 +40,7 @@ type RequestJobPosition struct {
 
 type RequestComment struct {
 	Content   string `json:"content"`
-	CompanyID int
+	CompanyID int    `json:"companyID"`
 }
 
 type RequestAcceptCompany struct {
@@ -70,16 +64,15 @@ const (
 )
 
 type RequestUser struct {
-	ID          int       `json:"id"`
-	Username    string    `json:"username"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
-	Birthday    time.Time `json:"birthday"`
-	Gender      Gender    `json:"gender"`
-	Email       string    `json:"email"`
-	PhoneNumber string    `json:"phoneNumber"`
-	Password    string    `json:"password"`
-	Role        Role      `json:"role"`
+	Username    string `json:"username"`
+	Name        string `json:"name"`
+	Surname     string `json:"surname"`
+	DateOfBirth string `json:"dateOfBirth"`
+	Gender      Gender `json:"gender"`
+	Email       string `json:"email"`
+	Phone       string `json:"phone"`
+	Password    string `json:"password"`
+	Role        Role   `json:"role"`
 }
 
 type RequestLogin struct {
@@ -92,6 +85,7 @@ type ResponseLogin struct {
 }
 
 type ResponseValidate struct {
+	ID       int    `json:"ID"`
 	Username string `json:"username"`
 	Role     int    `json:"role"`
 }
