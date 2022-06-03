@@ -31,11 +31,28 @@ type RequestJobInterview struct {
 }
 
 type RequestJobPosition struct {
-	Position     string `json:"position"`
-	WorkingHours string `json:"workingHours"`
-	Description  string `json:"description"`
-	Skills       string `json:"skills"`
-	CompanyID    int
+	Name        string   `json:"name"`
+	Position    string   `json:"position"`
+	Industry    string   `json:"industry"`
+	Description string   `json:"description"`
+	Skills      []Skills `json:"skills"`
+	CompanyID   int      `json:"companyID"`
+}
+
+type SkillProficiency int64
+
+const (
+	Novice SkillProficiency = iota
+	AdvancedBeginner
+	Proficient
+	Expert
+	Master
+)
+
+type Skills struct {
+	Name          string           `json:"name"`
+	Proficiency   SkillProficiency `json:"proficiency"`
+	JobPositionID int              `json:"jobPositionID"`
 }
 
 type RequestComment struct {
