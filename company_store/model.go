@@ -34,18 +34,38 @@ type JobInterview struct {
 }
 
 type JobPosition struct {
-	ID           int    `json:"id"`
-	Position     string `json:"position"`
-	WorkingHours string `json:"workingHours"`
-	Description  string `json:"description"`
-	Skills       string `json:"skills"`
-	CompanyID    int    `json:"companyID"`
+	ID          int      `json:"id"`
+	Name        string   `json:"name"`
+	Position    string   `json:"position"`
+	Industry    string   `json:"industry"`
+	Description string   `json:"description"`
+	Skills      []Skills `gorm:"foreignKey:JobPositionID"`
+	CompanyID   int      `json:"companyID"`
+}
+
+type SkillProficiency int64
+
+const (
+	Novice SkillProficiency = iota
+	Advanced
+	Beginner
+	Proficient
+	Expert
+	Master
+)
+
+type Skills struct {
+	ID            int              `json:"id"`
+	Name          string           `json:"name"`
+	Proficiency   SkillProficiency `json:"proficiency"`
+	JobPositionID int              `json:"jobPositionID"`
 }
 
 type Comment struct {
-	ID        int    `json:"id"`
-	Content   string `json:"content"`
-	CompanyID int    `json:"companyID"`
+	ID          int              `json:"id"`
+	Content     string           `json:"content"`
+	Proficiency SkillProficiency `json:"proficiency"`
+	CompanyID   int              `json:"companyID"`
 }
 
 type Gender int64

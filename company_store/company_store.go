@@ -30,7 +30,7 @@ func New() (*CompanyStore, error) {
 		return nil, err
 	}
 	ts.db = db
-	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{})
+	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{})
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,31 @@ func (ts *CompanyStore) AcceptCompany(companyReq dto.RequestAcceptCompany) int {
 
 func (ts *CompanyStore) GetAllCompanies() []Company {
 	var companies []Company
-	ts.db.Find(&companies)
+	ts.db.Find(&companies, "accepted = true")
 	return companies
+}
+
+func (ts *CompanyStore) GetAllJobPositions() []JobPosition {
+	var jobPositions []JobPosition
+	var jobPositionsWithSkills []JobPosition
+	ts.db.Find(&jobPositions)
+	for _, jobPosition := range jobPositions {
+		for _, skill := range ts.GetSkillsByJobPosition(jobPosition.ID) {
+			jobPosition.Skills = append(jobPosition.Skills, skill)
+		}
+		jobPositionsWithSkills = append(jobPositionsWithSkills, jobPosition)
+	}
+	return jobPositionsWithSkills
+}
+
+func (ts *CompanyStore) GetSkillsByJobPosition(id int) []Skills {
+	var skills []Skills
+	jobPositionID := strconv.Itoa(id)
+	result := ts.db.Find(&skills, "job_position_id = "+jobPositionID)
+	if result.RowsAffected > 0 {
+		return skills
+	}
+	return nil
 }
 
 func (ts *CompanyStore) GetOwnersCompanies(id int) ([]Company, error) {
@@ -142,9 +165,12 @@ func (ts *CompanyStore) GetJobInterview(id int) ([]JobInterview, error) {
 }
 
 func (ts *CompanyStore) CreateJobPosition(jobPositionReq dto.RequestJobPosition) int {
-	jobInterview := JobPositionMapper(&jobPositionReq)
-	ts.db.Create(&jobInterview)
-	return jobInterview.ID
+	jobPosition := JobPositionMapper(&jobPositionReq)
+	for _, skill := range jobPosition.Skills {
+		skill.ID = jobPosition.ID
+	}
+	ts.db.Create(&jobPosition)
+	return jobPosition.ID
 }
 
 func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {

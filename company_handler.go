@@ -126,6 +126,11 @@ func (ts *CompanyServer) getAllCompaniesHandler(w http.ResponseWriter, req *http
 	renderJSON(w, allCompanies)
 }
 
+func (ts *CompanyServer) getAllJobPositionHandler(w http.ResponseWriter, req *http.Request) {
+	allJobPositions := ts.store.GetAllJobPositions()
+	renderJSON(w, allJobPositions)
+}
+
 func (ts *CompanyServer) createJobSalaryHandler(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(contentType)
@@ -348,7 +353,6 @@ func decodeComment(r io.Reader) (*dto.RequestComment, error) {
 
 func decodeJobPosition(r io.Reader) (*dto.RequestJobPosition, error) {
 	dec := json.NewDecoder(r)
-	dec.DisallowUnknownFields()
 	var rc dto.RequestJobPosition
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err

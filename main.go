@@ -49,6 +49,7 @@ func main() {
 
 	//JOB POSITION HANDLERS
 	router.HandleFunc("/jobPosition", server.createJobPositionHandler).Methods("POST")
+	router.HandleFunc("/jobPosition", server.getAllJobPositionHandler).Methods("GET")
 	router.HandleFunc("/jobPosition/{id:[0-9a-zA-Z]+}", server.getJobPositionHandler).Methods("GET")
 
 	//COMMENT HANDLER
