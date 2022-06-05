@@ -1,6 +1,8 @@
 package company_store
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -195,32 +197,61 @@ func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 }
 
 func (ts *CompanyStore) ConnectWithDislinkt(connection dto.Connection) {
-	sendApiKeyToDislinkt()
-	//sendEmail()
+	if checkIfUserExists() {
+		apiKey := changeApiKey()
+		sendEmail(apiKey)
+	}
+
 }
 
-func sendApiKeyToDislinkt() {
+func checkIfUserExists() bool {
 
 	resp, err := http.Get("http://localhost:8000/users/userByUsername/ogijah")
 	if err != nil {
 		log.Printf("Request Failed: %s", err)
-		return
+		return false
 	}
 
 	//We Read the response body on the line below
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
+		return false
 	}
 
 	//Convert the bpdy to type string
 	sb := string(body)
 	log.Printf(sb)
+	return true
 }
 
-func sendEmail() {
+func changeApiKey() string {
+	client := &http.Client{}
+
+	json, err := json.Marshal("ogi")
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	//http request
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/ogi", bytes.NewBuffer(json))
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset-utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	fmt.Println(resp.StatusCode)
+	fmt.Println(resp)
+	return ""
+}
+
+func sendEmail(apiKey string) {
 	email := "sarapoparic@gmail.com"
-	apiKey := "123456"
 
 	// Sender data.
 	from := "fishingbookernsm@hotmail.com"
@@ -238,7 +269,7 @@ func sendEmail() {
 	// Message.
 	fromMessage := fmt.Sprintf("From: <%s>\r\n", "fishingbookernsm@hotmail.com")
 	toMessage := fmt.Sprintf("To: <%s>\r\n", "sarapoparic@gmail.com")
-	subject := "You have connected your account with Dislinkt!\r\n"
+	subject := "You have connected your account with Dislinkt!\r\n" + apiKey
 	body := "Api key to authentificate you are sharing posts is: " + apiKey
 	msg := fromMessage + toMessage + subject + "\r\n" + body
 	fmt.Println(msg)
