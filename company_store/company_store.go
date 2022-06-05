@@ -57,7 +57,15 @@ func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
 	//ts.db.Model(&Company{}).Updates(&company)
 	company := &Company{}
 	ts.db.First(&company, companyReq.ID)
-	*company = CompanyMapper(&companyReq)
+	company.Address = companyReq.Address
+	company.CompanyCulture = companyReq.CompanyCulture
+	company.Description = companyReq.Description
+	company.Email = companyReq.Email
+	company.Industry = companyReq.Industry
+	company.Name = companyReq.Name
+	company.Phone = companyReq.Phone
+	company.Website = companyReq.Website
+	company.YearOfEstablishment = companyReq.YearOfEstablishment
 	ts.db.Save(&company)
 	return company.ID
 }
