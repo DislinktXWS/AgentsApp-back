@@ -196,17 +196,18 @@ func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	return jobInterview.ID
 }
 
-func (ts *CompanyStore) ConnectWithDislinkt(connection dto.Connection) {
-	if checkIfUserExists() {
-		apiKey := changeApiKey()
-		sendEmail(apiKey)
+func (ts *CompanyStore) ConnectWithDislinkt(connection dto.Connection, username string) {
+	if checkIfUserExists(username) {
+		apiKey := changeApiKey(username)
+		//sendEmail(apiKey)
+		log.Println(apiKey)
 	}
 
 }
 
-func checkIfUserExists() bool {
+func checkIfUserExists(username string) bool {
 
-	resp, err := http.Get("http://localhost:8000/users/userByUsername/ogijah")
+	resp, err := http.Get("http://localhost:8000/users/userByUsername/" + username)
 	if err != nil {
 		log.Printf("Request Failed: %s", err)
 		return false
@@ -225,16 +226,16 @@ func checkIfUserExists() bool {
 	return true
 }
 
-func changeApiKey() string {
+func changeApiKey(username string) string {
 	client := &http.Client{}
 
-	json, err := json.Marshal("ogi")
+	json, err := json.Marshal(username)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 
 	//http request
-	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/ogi", bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(json))
 	if err != nil {
 		log.Printf(err.Error())
 	}

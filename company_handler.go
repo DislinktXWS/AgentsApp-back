@@ -245,6 +245,7 @@ func (ts *CompanyServer) createCommentHandler(w http.ResponseWriter, req *http.R
 }
 
 func (ts *CompanyServer) connectWithDislinkt(w http.ResponseWriter, req *http.Request) {
+	username, _ := mux.Vars(req)["username"]
 	contentType := req.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(contentType)
 	if err != nil {
@@ -262,7 +263,7 @@ func (ts *CompanyServer) connectWithDislinkt(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	ts.store.ConnectWithDislinkt(*rt)
+	ts.store.ConnectWithDislinkt(*rt, username)
 }
 
 func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Request) {
