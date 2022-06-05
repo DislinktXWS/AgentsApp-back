@@ -2,9 +2,12 @@ package company_store
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"modules/dto"
 	"modules/utils"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strconv"
 
@@ -189,6 +192,66 @@ func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	jobInterview := CommentMapper(&commentReq)
 	ts.db.Create(&jobInterview)
 	return jobInterview.ID
+}
+
+func (ts *CompanyStore) ConnectWithDislinkt(connection dto.Connection) {
+	sendApiKeyToDislinkt()
+	//sendEmail()
+}
+
+func sendApiKeyToDislinkt() {
+
+	resp, err := http.Get("http://localhost:8000/users/userByUsername/ogijah")
+	if err != nil {
+		log.Printf("Request Failed: %s", err)
+		return
+	}
+
+	//We Read the response body on the line below
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//Convert the bpdy to type string
+	sb := string(body)
+	log.Printf(sb)
+}
+
+func sendEmail() {
+	email := "sarapoparic@gmail.com"
+	apiKey := "123456"
+
+	// Sender data.
+	from := "fishingbookernsm@hotmail.com"
+	password := "ninasaramarija123"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.office365.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "fishingbookernsm@hotmail.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", "sarapoparic@gmail.com")
+	subject := "You have connected your account with Dislinkt!\r\n"
+	body := "Api key to authentificate you are sharing posts is: " + apiKey
+	msg := fromMessage + toMessage + subject + "\r\n" + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email Sent Successfully!")
 }
 
 func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {

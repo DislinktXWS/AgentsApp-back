@@ -106,3 +106,8 @@ type ResponseValidate struct {
 	Username string `json:"username"`
 	Role     int    `json:"role"`
 }
+
+type Connection struct {
+	ID     int    `json:"ID"`
+	ApiKey string `json:"apiKey"`
+}

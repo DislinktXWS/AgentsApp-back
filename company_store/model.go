@@ -95,4 +95,5 @@ type User struct {
 	Password    string    `json:"password"`
 	Role        Role      `json:"role"`
 	Company     []Company `gorm:"foreignKey:OwnerID"`
+	IsConnected bool      `json:isConnected`
 }

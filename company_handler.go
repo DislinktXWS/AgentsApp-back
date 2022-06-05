@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"io"
 	"mime"
 	"modules/dto"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func (ts *CompanyServer) createCompanyHandler(w http.ResponseWriter, req *http.Request) {
@@ -243,6 +244,27 @@ func (ts *CompanyServer) createCommentHandler(w http.ResponseWriter, req *http.R
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
+func (ts *CompanyServer) connectWithDislinkt(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeConnection(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ts.store.ConnectWithDislinkt(*rt)
+}
+
 func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(contentType)
@@ -345,6 +367,15 @@ func decodeComment(r io.Reader) (*dto.RequestComment, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	var rc dto.RequestComment
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodeConnection(r io.Reader) (*dto.Connection, error) {
+	dec := json.NewDecoder(r)
+	var rc dto.Connection
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
 	}

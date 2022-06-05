@@ -56,6 +56,9 @@ func main() {
 	router.HandleFunc("/comment", server.createCommentHandler).Methods("POST")
 	router.HandleFunc("/comment/{id:[0-9a-zA-Z]+}", server.getCommentHandler).Methods("GET")
 
+	//CONNECTION WITH DISLINKT HANDLER
+	router.HandleFunc("/connectWithDislinkt/{username}", server.connectWithDislinkt).Methods("POST")
+
 	//AUTH HANDLER
 	router.HandleFunc("/registration", server.registerHandler).Methods("POST")
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
