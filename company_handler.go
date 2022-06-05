@@ -126,6 +126,11 @@ func (ts *CompanyServer) getAllCompaniesHandler(w http.ResponseWriter, req *http
 	renderJSON(w, allCompanies)
 }
 
+func (ts *CompanyServer) getCompanyRequestsHandler(w http.ResponseWriter, req *http.Request) {
+	allCompanies := ts.store.GetCompanyRequests()
+	renderJSON(w, allCompanies)
+}
+
 func (ts *CompanyServer) getAllJobPositionHandler(w http.ResponseWriter, req *http.Request) {
 	allJobPositions := ts.store.GetAllJobPositions()
 	renderJSON(w, allJobPositions)
