@@ -72,6 +72,12 @@ func (ts *CompanyStore) GetAllCompanies() []Company {
 	return companies
 }
 
+func (ts *CompanyStore) GetCompanyRequests() []Company {
+	var companies []Company
+	ts.db.Find(&companies, "checked = false")
+	return companies
+}
+
 func (ts *CompanyStore) GetAllJobPositions() []JobPosition {
 	var jobPositions []JobPosition
 	var jobPositionsWithSkills []JobPosition
