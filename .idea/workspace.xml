@@ -10,6 +10,7 @@
       <change beforePath="$PROJECT_DIR$/company_store/company_store.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/company_store.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_store/jobPosition_mapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/jobPosition_mapper.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/company_store/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/company_store/user_mapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/company_store/user_mapper.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dto/companyDTO.go" beforeDir="false" afterPath="$PROJECT_DIR$/dto/companyDTO.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
@@ -96,19 +97,19 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/company_store/company_store.go</url>
-          <line>58</line>
-          <option name="timeStamp" value="4" />
+          <url>file://$PROJECT_DIR$/company_handler.go</url>
+          <line>214</line>
+          <option name="timeStamp" value="30" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/company_handler.go</url>
-          <line>224</line>
-          <option name="timeStamp" value="13" />
+          <line>232</line>
+          <option name="timeStamp" value="31" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/company_handler.go</url>
-          <line>190</line>
-          <option name="timeStamp" value="18" />
+          <line>192</line>
+          <option name="timeStamp" value="32" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

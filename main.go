@@ -51,13 +51,16 @@ func main() {
 	router.HandleFunc("/jobPosition", server.createJobPositionHandler).Methods("POST")
 	router.HandleFunc("/jobPosition", server.getAllJobPositionHandler).Methods("GET")
 	router.HandleFunc("/jobPosition/{id:[0-9a-zA-Z]+}", server.getJobPositionHandler).Methods("GET")
+	router.HandleFunc("/shareOnDislinkt/{apiKey}", server.shareJobPosition).Methods("POST")
+	router.HandleFunc("/isJobPositionShared/{id}", server.isJobPositionShared).Methods("GET")
 
 	//COMMENT HANDLER
 	router.HandleFunc("/comment", server.createCommentHandler).Methods("POST")
 	router.HandleFunc("/comment/{id:[0-9a-zA-Z]+}", server.getCommentHandler).Methods("GET")
 
 	//CONNECTION WITH DISLINKT HANDLER
-	router.HandleFunc("/connectWithDislinkt/{username}", server.connectWithDislinkt).Methods("POST")
+	router.HandleFunc("/connectWithDislinkt/{username}/{id}", server.connectWithDislinkt).Methods("PUT")
+	router.HandleFunc("/isConnected/{id}", server.isConnectedHandler).Methods("GET")
 
 	//AUTH HANDLER
 	router.HandleFunc("/registration", server.registerHandler).Methods("POST")

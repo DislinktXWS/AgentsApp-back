@@ -4,6 +4,7 @@ import "modules/dto"
 
 func JobPositionMapper(jobPositionReq *dto.RequestJobPosition) JobPosition {
 	jobPosition := JobPosition{
+		ID:          jobPositionReq.ID,
 		Description: jobPositionReq.Description,
 		Skills:      SkillsMapper(jobPositionReq),
 		Name:        jobPositionReq.Name,

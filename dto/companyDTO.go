@@ -13,24 +13,21 @@ type RequestCompany struct {
 	Website             string `json:"website"`
 	OwnerID             int    `json:"ownerID"`
 }
-
 type ResponseId struct {
 	Id int `json:"id"`
 }
-
 type RequestJobSalary struct {
 	Position  string `json:"position"`
 	Salary    int    `json:"salary"`
 	CompanyID int    `json:"companyID"`
 }
-
 type RequestJobInterview struct {
 	Position   string `json:"position"`
 	Impression string `json:"impression"`
 	CompanyID  int
 }
-
 type RequestJobPosition struct {
+	ID          int      `json:"ID"`
 	Name        string   `json:"name"`
 	Position    string   `json:"position"`
 	Industry    string   `json:"industry"`
@@ -38,7 +35,6 @@ type RequestJobPosition struct {
 	Skills      []Skills `json:"skills"`
 	CompanyID   int      `json:"companyID"`
 }
-
 type SkillProficiency int64
 
 const (
@@ -54,17 +50,14 @@ type Skills struct {
 	Proficiency   SkillProficiency `json:"proficiency"`
 	JobPositionID int              `json:"jobPositionID"`
 }
-
 type RequestComment struct {
 	Content   string `json:"content"`
 	CompanyID int    `json:"companyID"`
 }
-
 type RequestAcceptCompany struct {
 	ID     int  `json:"ID"`
 	Accept bool `json:"accept"`
 }
-
 type Gender int64
 
 const (
@@ -90,23 +83,21 @@ type RequestUser struct {
 	Phone       string `json:"phone"`
 	Password    string `json:"password"`
 	Role        Role   `json:"role"`
+	IsConnected bool   `json:"isConnected"`
+	ApiKey      string `json:"apiKey"`
 }
-
 type RequestLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-
 type ResponseLogin struct {
 	Token string `json:"token"`
 }
-
 type ResponseValidate struct {
 	ID       int    `json:"ID"`
 	Username string `json:"username"`
 	Role     int    `json:"role"`
 }
-
 type Connection struct {
 	ID     int    `json:"ID"`
 	ApiKey string `json:"apiKey"`

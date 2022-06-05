@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime"
 	"modules/dto"
@@ -210,9 +211,61 @@ func (ts *CompanyServer) createJobPositionHandler(w http.ResponseWriter, req *ht
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
+func (ts *CompanyServer) shareJobPosition(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	apiKey, _ := mux.Vars(req)["apiKey"]
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeJobPosition(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	fmt.Println(rt)
+	result, id := ts.store.ShareJobPosition(*rt, apiKey)
+
+	if result {
+		ts.store.SetJobPositionIsShared(id)
+	}
+
+	renderJSON(w, "Successfully shared")
+}
+
 func (ts *CompanyServer) getJobPositionHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetJobPosition(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) isConnectedHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.IsConnected(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) isJobPositionShared(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.IsJobPositionShared(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -246,24 +299,20 @@ func (ts *CompanyServer) createCommentHandler(w http.ResponseWriter, req *http.R
 
 func (ts *CompanyServer) connectWithDislinkt(w http.ResponseWriter, req *http.Request) {
 	username, _ := mux.Vars(req)["username"]
-	contentType := req.Header.Get("Content-Type")
-	mediatype, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if mediatype != "application/json" {
-		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
-		return
-	}
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 
-	rt, err := decodeConnection(req.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	apiKey := ts.store.ConnectWithDislinkt(username, id)
+	response, err := json.Marshal(apiKey)
+	if apiKey == "" {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	ts.store.ConnectWithDislinkt(*rt, username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Request) {

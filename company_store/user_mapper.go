@@ -16,7 +16,8 @@ func UserMapper(userReq *dto.RequestUser) User {
 		Surname:     userReq.Surname,
 		Phone:       userReq.Phone,
 		Role:        Role(userReq.Role),
-		IsConnected: false,
+		IsConnected: userReq.IsConnected,
+		ApiKey:      userReq.ApiKey,
 	}
 	return user
 }

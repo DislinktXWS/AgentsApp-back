@@ -14,6 +14,7 @@ import (
 	"net/smtp"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type CompanyStore struct {
@@ -21,7 +22,7 @@ type CompanyStore struct {
 }
 
 type ApiKey struct {
-	apiKey string
+	apiKey string `json:"apiKey"`
 }
 
 func New() (*CompanyStore, error) {
@@ -29,7 +30,7 @@ func New() (*CompanyStore, error) {
 
 	host := "localhost"
 	user := "postgres"
-	password := "2493134"
+	password := "bbogi1219"
 	dbname := "AgentDB"
 	dbport := "5432"
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
@@ -139,6 +140,36 @@ func (ts *CompanyStore) GetJobSalary(id int) ([]JobSalary, error) {
 	return jobSalaries, fmt.Errorf("company with id = %d does not have any public salaries", id)
 }
 
+func (ts *CompanyStore) IsConnected(id int) (bool, error) {
+	userId := strconv.Itoa(id)
+	var user User
+	result := ts.db.Find(&user, "id = "+userId)
+	if result.RowsAffected > 0 {
+		return user.IsConnected, nil
+	}
+	return false, fmt.Errorf("user not found")
+}
+
+func (ts *CompanyStore) IsJobPositionShared(id int) (bool, error) {
+	jobPositionId := strconv.Itoa(id)
+	var jobPosition JobPosition
+	result := ts.db.Find(&jobPosition, "id = "+jobPositionId)
+	if result.RowsAffected > 0 {
+		return jobPosition.IsShared, nil
+	}
+	return false, fmt.Errorf("user not found")
+}
+
+func (ts *CompanyStore) GetUserApiKey(id int) string {
+	userId := strconv.Itoa(id)
+	var user User
+	result := ts.db.Find(&user, "id = "+userId)
+	if result.RowsAffected > 0 {
+		return user.ApiKey
+	}
+	return ""
+}
+
 func (ts *CompanyStore) DeleteJobSalary(id int) error {
 	result := ts.db.Delete(&JobSalary{}, id)
 	if result.RowsAffected > 0 {
@@ -181,16 +212,62 @@ func (ts *CompanyStore) CreateJobPosition(jobPositionReq dto.RequestJobPosition)
 	return jobPosition.ID
 }
 
-func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
-	var positions []JobPosition
-	ownerID := strconv.Itoa(id)
-	result := ts.db.Find(&positions, "company_id = "+ownerID)
-
+func (ts *CompanyStore) SetJobPositionIsShared(jobPositionId int) {
+	var jobPosition JobPosition
+	result := ts.db.Find(&jobPosition, JobPosition{ID: jobPositionId})
 	if result.RowsAffected > 0 {
-		return positions, nil
+		jobPosition.IsShared = true
+	}
+	ts.db.Save(&jobPosition)
+}
+
+func (ts *CompanyStore) ShareJobPosition(jobPositionReq dto.RequestJobPosition, apiKey string) (bool, int) {
+	jobPosition := JobPositionMapper(&jobPositionReq)
+	client := &http.Client{}
+
+	jsonVal, err := json.Marshal(jobPosition)
+	if err != nil {
+		log.Printf(err.Error())
 	}
 
-	return positions, fmt.Errorf("company with id=%d does not have any new positions", id)
+	//http request
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8000/shareBusinessOffer", bytes.NewBuffer(jsonVal))
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset-utf-8")
+	req.Header.Set("ApiKey", apiKey)
+	resp, _ := client.Do(req)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	if resp.StatusCode == 500 {
+		return false, -1
+	}
+	resp.Body.Close()
+
+	return true, jobPosition.ID
+}
+
+func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
+	var jobPositions []JobPosition
+	ownerID := strconv.Itoa(id)
+	result := ts.db.Find(&jobPositions, "company_id = "+ownerID)
+
+	if result.RowsAffected == 0 {
+		return jobPositions, fmt.Errorf("company with id=%d does not have any new positions", id)
+	}
+
+	var jobPositionsWithSkills []JobPosition
+	for _, jobPosition := range jobPositions {
+		for _, skill := range ts.GetSkillsByJobPosition(jobPosition.ID) {
+			jobPosition.Skills = append(jobPosition.Skills, skill)
+		}
+		jobPositionsWithSkills = append(jobPositionsWithSkills, jobPosition)
+	}
+	return jobPositionsWithSkills, nil
 }
 
 func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
@@ -199,13 +276,24 @@ func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	return jobInterview.ID
 }
 
-func (ts *CompanyStore) ConnectWithDislinkt(connection dto.Connection, username string) {
+func (ts *CompanyStore) ConnectWithDislinkt(username string, id int) string {
+	apiKey := ""
 	if checkIfUserExists(username) {
-		apiKey := changeApiKey(username)
+		apiKey = changeApiKey(username)
 		//sendEmail(apiKey)
-		log.Println(apiKey)
+		var user User
+		result := ts.db.Find(&user, User{ID: id})
+		if result.RowsAffected > 0 {
+			user.IsConnected = true
+			user.ApiKey = apiKey
+		}
+		ts.db.Save(&user)
+		fmt.Println(apiKey)
+	} else {
+		fmt.Println("Username does not exist")
 	}
 
+	return apiKey
 }
 
 func checkIfUserExists(username string) bool {
@@ -223,7 +311,12 @@ func checkIfUserExists(username string) bool {
 		return false
 	}
 
-	//Convert the bpdy to type string
+	fmt.Println(resp.StatusCode)
+	if resp.StatusCode == 500 {
+		return false
+	}
+
+	//Convert the body to type string
 	sb := string(body)
 	log.Printf(sb)
 	return true
@@ -249,19 +342,13 @@ func changeApiKey(username string) string {
 		log.Printf(err.Error())
 	}
 
-	fmt.Println("ODGOVOR")
 	body, _ := ioutil.ReadAll(resp.Body)
+
+	bodyData := string(body)
+	split := strings.Split(bodyData, "\"apiKey\":")
+	split2 := strings.Split(split[1], "\"")
 	resp.Body.Close()
-	fmt.Println(string(body))
-
-	var stringg ApiKey
-
-	json.NewDecoder(resp.Body).Decode(&stringg)
-
-	fmt.Println("ODGOVORRR")
-	fmt.Println(stringg)
-
-	return ""
+	return split2[1]
 }
 
 func sendEmail(apiKey string) {
