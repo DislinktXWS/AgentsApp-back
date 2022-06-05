@@ -62,10 +62,9 @@ type Skills struct {
 }
 
 type Comment struct {
-	ID          int              `json:"id"`
-	Content     string           `json:"content"`
-	Proficiency SkillProficiency `json:"proficiency"`
-	CompanyID   int              `json:"companyID"`
+	ID        int    `json:"id"`
+	Content   string `json:"content"`
+	CompanyID int    `json:"companyID"`
 }
 
 type Gender int64
