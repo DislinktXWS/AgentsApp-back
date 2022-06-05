@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"log"
 	"modules/dto"
@@ -12,21 +14,22 @@ import (
 	"net/smtp"
 	"os"
 	"strconv"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 type CompanyStore struct {
 	db *gorm.DB
 }
 
+type ApiKey struct {
+	apiKey string
+}
+
 func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
 	host := "localhost"
-	user := os.Getenv("POSTGRES_USERNAME")
-	password := os.Getenv("POSTGRES_PASSWORD")
+	user := "postgres"
+	password := "2493134"
 	dbname := "AgentDB"
 	dbport := "5432"
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
@@ -229,13 +232,13 @@ func checkIfUserExists(username string) bool {
 func changeApiKey(username string) string {
 	client := &http.Client{}
 
-	json, err := json.Marshal(username)
+	jsonVal, err := json.Marshal(username)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 
 	//http request
-	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(jsonVal))
 	if err != nil {
 		log.Printf(err.Error())
 	}
@@ -246,8 +249,18 @@ func changeApiKey(username string) string {
 		log.Printf(err.Error())
 	}
 
-	fmt.Println(resp.StatusCode)
-	fmt.Println(resp)
+	fmt.Println("ODGOVOR")
+	body, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	fmt.Println(string(body))
+
+	var stringg ApiKey
+
+	json.NewDecoder(resp.Body).Decode(&stringg)
+
+	fmt.Println("ODGOVORRR")
+	fmt.Println(stringg)
+
 	return ""
 }
 
