@@ -1,27 +1,36 @@
 package company_store
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"io/ioutil"
+	"log"
 	"modules/dto"
 	"modules/utils"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strconv"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"strings"
 )
 
 type CompanyStore struct {
 	db *gorm.DB
 }
 
+type ApiKey struct {
+	apiKey string `json:"apiKey"`
+}
+
 func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
 	host := "localhost"
-	user := os.Getenv("POSTGRES_USERNAME")
-	password := os.Getenv("POSTGRES_PASSWORD")
+	user := "postgres"
+	password := "bbogi1219"
 	dbname := "AgentDB"
 	dbport := "5432"
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
@@ -48,7 +57,15 @@ func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
 	//ts.db.Model(&Company{}).Updates(&company)
 	company := &Company{}
 	ts.db.First(&company, companyReq.ID)
-	*company = CompanyMapper(&companyReq)
+	company.Address = companyReq.Address
+	company.CompanyCulture = companyReq.CompanyCulture
+	company.Description = companyReq.Description
+	company.Email = companyReq.Email
+	company.Industry = companyReq.Industry
+	company.Name = companyReq.Name
+	company.Phone = companyReq.Phone
+	company.Website = companyReq.Website
+	company.YearOfEstablishment = companyReq.YearOfEstablishment
 	ts.db.Save(&company)
 	return company.ID
 }
@@ -137,6 +154,36 @@ func (ts *CompanyStore) GetJobSalary(id int) ([]JobSalary, error) {
 	return jobSalaries, fmt.Errorf("company with id = %d does not have any public salaries", id)
 }
 
+func (ts *CompanyStore) IsConnected(id int) (bool, error) {
+	userId := strconv.Itoa(id)
+	var user User
+	result := ts.db.Find(&user, "id = "+userId)
+	if result.RowsAffected > 0 {
+		return user.IsConnected, nil
+	}
+	return false, fmt.Errorf("user not found")
+}
+
+func (ts *CompanyStore) IsJobPositionShared(id int) (bool, error) {
+	jobPositionId := strconv.Itoa(id)
+	var jobPosition JobPosition
+	result := ts.db.Find(&jobPosition, "id = "+jobPositionId)
+	if result.RowsAffected > 0 {
+		return jobPosition.IsShared, nil
+	}
+	return false, fmt.Errorf("user not found")
+}
+
+func (ts *CompanyStore) GetUserApiKey(id int) string {
+	userId := strconv.Itoa(id)
+	var user User
+	result := ts.db.Find(&user, "id = "+userId)
+	if result.RowsAffected > 0 {
+		return user.ApiKey
+	}
+	return ""
+}
+
 func (ts *CompanyStore) DeleteJobSalary(id int) error {
 	result := ts.db.Delete(&JobSalary{}, id)
 	if result.RowsAffected > 0 {
@@ -179,22 +226,178 @@ func (ts *CompanyStore) CreateJobPosition(jobPositionReq dto.RequestJobPosition)
 	return jobPosition.ID
 }
 
-func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
-	var positions []JobPosition
-	ownerID := strconv.Itoa(id)
-	result := ts.db.Find(&positions, "company_id = "+ownerID)
-
+func (ts *CompanyStore) SetJobPositionIsShared(jobPositionId int) {
+	var jobPosition JobPosition
+	result := ts.db.Find(&jobPosition, JobPosition{ID: jobPositionId})
 	if result.RowsAffected > 0 {
-		return positions, nil
+		jobPosition.IsShared = true
+	}
+	ts.db.Save(&jobPosition)
+}
+
+func (ts *CompanyStore) ShareJobPosition(jobPositionReq dto.RequestJobPosition, apiKey string) (bool, int) {
+	jobPosition := JobPositionMapper(&jobPositionReq)
+	client := &http.Client{}
+
+	jsonVal, err := json.Marshal(jobPosition)
+	if err != nil {
+		log.Printf(err.Error())
 	}
 
-	return positions, fmt.Errorf("company with id=%d does not have any new positions", id)
+	//http request
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8000/shareBusinessOffer", bytes.NewBuffer(jsonVal))
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset-utf-8")
+	req.Header.Set("ApiKey", apiKey)
+	resp, _ := client.Do(req)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	if resp.StatusCode == 500 {
+		return false, -1
+	}
+	resp.Body.Close()
+
+	return true, jobPosition.ID
+}
+
+func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
+	var jobPositions []JobPosition
+	ownerID := strconv.Itoa(id)
+	result := ts.db.Find(&jobPositions, "company_id = "+ownerID)
+
+	if result.RowsAffected == 0 {
+		return jobPositions, fmt.Errorf("company with id=%d does not have any new positions", id)
+	}
+
+	var jobPositionsWithSkills []JobPosition
+	for _, jobPosition := range jobPositions {
+		for _, skill := range ts.GetSkillsByJobPosition(jobPosition.ID) {
+			jobPosition.Skills = append(jobPosition.Skills, skill)
+		}
+		jobPositionsWithSkills = append(jobPositionsWithSkills, jobPosition)
+	}
+	return jobPositionsWithSkills, nil
 }
 
 func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	jobInterview := CommentMapper(&commentReq)
 	ts.db.Create(&jobInterview)
 	return jobInterview.ID
+}
+
+func (ts *CompanyStore) ConnectWithDislinkt(username string, id int) string {
+	apiKey := ""
+	if checkIfUserExists(username) {
+		apiKey = changeApiKey(username)
+		//sendEmail(apiKey)
+		var user User
+		result := ts.db.Find(&user, User{ID: id})
+		if result.RowsAffected > 0 {
+			user.IsConnected = true
+			user.ApiKey = apiKey
+		}
+		ts.db.Save(&user)
+		fmt.Println(apiKey)
+	} else {
+		fmt.Println("Username does not exist")
+	}
+
+	return apiKey
+}
+
+func checkIfUserExists(username string) bool {
+
+	resp, err := http.Get("http://localhost:8000/users/userByUsername/" + username)
+	if err != nil {
+		log.Printf("Request Failed: %s", err)
+		return false
+	}
+
+	//We Read the response body on the line below
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+		return false
+	}
+
+	fmt.Println(resp.StatusCode)
+	if resp.StatusCode == 500 {
+		return false
+	}
+
+	//Convert the body to type string
+	sb := string(body)
+	log.Printf(sb)
+	return true
+}
+
+func changeApiKey(username string) string {
+	client := &http.Client{}
+
+	jsonVal, err := json.Marshal(username)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	//http request
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(jsonVal))
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset-utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	bodyData := string(body)
+	split := strings.Split(bodyData, "\"apiKey\":")
+	split2 := strings.Split(split[1], "\"")
+	resp.Body.Close()
+	return split2[1]
+}
+
+func sendEmail(apiKey string) {
+	email := "sarapoparic@gmail.com"
+
+	// Sender data.
+	from := "fishingbookernsm@hotmail.com"
+	password := "ninasaramarija123"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.office365.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "fishingbookernsm@hotmail.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", "sarapoparic@gmail.com")
+	subject := "You have connected your account with Dislinkt!\r\n" + apiKey
+	body := "Api key to authentificate you are sharing posts is: " + apiKey
+	msg := fromMessage + toMessage + subject + "\r\n" + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email Sent Successfully!")
 }
 
 func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {

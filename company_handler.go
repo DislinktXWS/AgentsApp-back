@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
+	"fmt"
 	"io"
 	"mime"
 	"modules/dto"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func (ts *CompanyServer) createCompanyHandler(w http.ResponseWriter, req *http.Request) {
@@ -214,9 +216,61 @@ func (ts *CompanyServer) createJobPositionHandler(w http.ResponseWriter, req *ht
 	renderJSON(w, dto.ResponseId{Id: id})
 }
 
+func (ts *CompanyServer) shareJobPosition(w http.ResponseWriter, req *http.Request) {
+	contentType := req.Header.Get("Content-Type")
+	apiKey, _ := mux.Vars(req)["apiKey"]
+	mediatype, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediatype != "application/json" {
+		http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	rt, err := decodeJobPosition(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	fmt.Println(rt)
+	result, id := ts.store.ShareJobPosition(*rt, apiKey)
+
+	if result {
+		ts.store.SetJobPositionIsShared(id)
+	}
+
+	renderJSON(w, "Successfully shared")
+}
+
 func (ts *CompanyServer) getJobPositionHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetJobPosition(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) isConnectedHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.IsConnected(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	renderJSON(w, task)
+}
+
+func (ts *CompanyServer) isJobPositionShared(w http.ResponseWriter, req *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+	task, err := ts.store.IsJobPositionShared(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -246,6 +300,24 @@ func (ts *CompanyServer) createCommentHandler(w http.ResponseWriter, req *http.R
 
 	id := ts.store.CreateComment(*rt)
 	renderJSON(w, dto.ResponseId{Id: id})
+}
+
+func (ts *CompanyServer) connectWithDislinkt(w http.ResponseWriter, req *http.Request) {
+	username, _ := mux.Vars(req)["username"]
+	id, _ := strconv.Atoi(mux.Vars(req)["id"])
+
+	apiKey := ts.store.ConnectWithDislinkt(username, id)
+	response, err := json.Marshal(apiKey)
+	if apiKey == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Request) {
@@ -350,6 +422,15 @@ func decodeComment(r io.Reader) (*dto.RequestComment, error) {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	var rc dto.RequestComment
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodeConnection(r io.Reader) (*dto.Connection, error) {
+	dec := json.NewDecoder(r)
+	var rc dto.Connection
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
 	}

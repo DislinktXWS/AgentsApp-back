@@ -41,14 +41,14 @@ type JobPosition struct {
 	Description string   `json:"description"`
 	Skills      []Skills `gorm:"foreignKey:JobPositionID"`
 	CompanyID   int      `json:"companyID"`
+	IsShared    bool     `json:"isShared"`
 }
 
 type SkillProficiency int64
 
 const (
 	Novice SkillProficiency = iota
-	Advanced
-	Beginner
+	AdvancedBeginner
 	Proficient
 	Expert
 	Master
@@ -94,4 +94,6 @@ type User struct {
 	Password    string    `json:"password"`
 	Role        Role      `json:"role"`
 	Company     []Company `gorm:"foreignKey:OwnerID"`
+	IsConnected bool      `json:"isConnected"`
+	ApiKey      string    `json:"apiKey"`
 }
