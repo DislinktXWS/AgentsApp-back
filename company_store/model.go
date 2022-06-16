@@ -1,5 +1,7 @@
 package company_store
 
+import "time"
+
 type Company struct {
 	ID                  int            `json:"id"`
 	Name                string         `json:"name"`
@@ -83,17 +85,20 @@ const (
 )
 
 type User struct {
-	ID          int       `json:"id"`
-	Username    string    `json:"username"`
-	Name        string    `json:"name"`
-	Surname     string    `json:"surname"`
-	DateOfBirth string    `json:"dateOfBirth"`
-	Gender      Gender    `json:"gender"`
-	Email       string    `json:"email"`
-	Phone       string    `json:"phone"`
-	Password    string    `json:"password"`
-	Role        Role      `json:"role"`
-	Company     []Company `gorm:"foreignKey:OwnerID"`
-	IsConnected bool      `json:"isConnected"`
-	ApiKey      string    `json:"apiKey"`
+	ID                int       `json:"id"`
+	Username          string    `json:"username"`
+	Name              string    `json:"name"`
+	Surname           string    `json:"surname"`
+	DateOfBirth       string    `json:"dateOfBirth"`
+	Gender            Gender    `json:"gender"`
+	Email             string    `json:"email"`
+	Phone             string    `json:"phone"`
+	Password          string    `json:"password"`
+	Role              Role      `json:"role"`
+	Company           []Company `gorm:"foreignKey:OwnerID"`
+	IsConnected       bool      `json:"isConnected"`
+	ApiKey            string    `json:"apiKey"`
+	Token             string    `json:"token"`
+	TokenCreationDate time.Time `json:"tokenCreationDate"`
+	IsVerified        bool      `json:"isVerified"`
 }

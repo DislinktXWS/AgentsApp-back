@@ -2,10 +2,10 @@ package company_store
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"log"
 	"modules/dto"
@@ -15,6 +15,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type CompanyStore struct {
@@ -30,7 +34,7 @@ func New() (*CompanyStore, error) {
 
 	host := "localhost"
 	user := "postgres"
-	password := "bbogi1219"
+	password := "ftn"
 	dbname := "AgentDB"
 	dbport := "5432"
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
@@ -369,8 +373,8 @@ func sendEmail(apiKey string) {
 	email := "sarapoparic@gmail.com"
 
 	// Sender data.
-	from := "fishingbookernsm@hotmail.com"
-	password := "ninasaramarija123"
+	from := "publickeyinfrastructuresomn@hotmail.com"
+	password := "PkiSOMN123"
 
 	// Receiver email address.
 	to := []string{
@@ -382,7 +386,7 @@ func sendEmail(apiKey string) {
 	smtpPort := "587"
 
 	// Message.
-	fromMessage := fmt.Sprintf("From: <%s>\r\n", "fishingbookernsm@hotmail.com")
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "publickeyinfrastructuresomn@hotmail.com")
 	toMessage := fmt.Sprintf("To: <%s>\r\n", "sarapoparic@gmail.com")
 	subject := "You have connected your account with Dislinkt!\r\n" + apiKey
 	body := "Api key to authentificate you are sharing posts is: " + apiKey
@@ -403,7 +407,208 @@ func sendEmail(apiKey string) {
 func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {
 	user := UserMapper(&userReq)
 	ts.db.Create(&user)
+	token := ts.generateVerificationToken(user.ID)
+	sendRegistrationEmail(userReq.Email, userReq.Name, userReq.Surname, token)
 	return user
+}
+
+func (ts *CompanyStore) generateVerificationToken(userId int) string {
+	token := encodeToString(6)
+	var user User
+	result := ts.db.Find(&user, User{ID: userId})
+	if result.RowsAffected > 0 {
+		user.Token = token
+		user.TokenCreationDate = time.Now()
+	}
+	ts.db.Save(&user)
+	return token
+}
+
+func encodeToString(max int) string {
+	var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+	b := make([]byte, max)
+	n, err := io.ReadAtLeast(rand.Reader, b, max)
+	if n != max {
+		panic(err)
+	}
+	for i := 0; i < len(b); i++ {
+		b[i] = table[int(b[i])%len(table)]
+	}
+	return string(b)
+}
+
+func sendRegistrationEmail(email, name, surname, token string) {
+
+	// Sender data.
+	from := "bezbednostsomn@yahoo.com"
+	password := "fcmhbptswmwtphum"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.mail.yahoo.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "bezbednostsomn@yahoo.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", email)
+	subject := "Welcome to Agents App, please verify your registration!\r\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+	body := "<p>Dear " + name + " " + surname + ",</p>"
+	verifyURL := "http://localhost:4200/verification/" + token
+	body = body + "<h3><a href=\"" + verifyURL + "\">VERIFY ACCOUNT</a></h3>"
+	body = body + "<p>Thank you,<br>Agents App</p>"
+
+	msg := fromMessage + toMessage + subject + mime + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email sent successfully!")
+}
+
+func (ts *CompanyStore) PasswordlessLogin(email string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{Email: email})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	token := ts.generateVerificationToken(user.ID)
+	sendPasswordlessLoginEmail(user.Email, user.Name, user.Surname, token)
+	return user, http.StatusOK
+}
+
+func sendPasswordlessLoginEmail(email, name, surname, token string) {
+
+	// Sender data.
+	from := "bezbednostsomn@yahoo.com"
+	password := "fcmhbptswmwtphum"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.mail.yahoo.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "bezbednostsomn@yahoo.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", email)
+	subject := "Passwordless log in\r\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+	body := "<p>Dear " + name + " " + surname + ",</p>"
+	verifyURL := "http://localhost:4200/verification/" + token
+	body = body + "<h3><a href=\"" + verifyURL + "\">LOG IN</a></h3>"
+	body = body + "<p>Thank you,<br>Agents App</p>"
+
+	msg := fromMessage + toMessage + subject + mime + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email sent successfully!")
+}
+
+func (ts *CompanyStore) AccountRecovery(email string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{Email: email})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+	token, _ := wrapper.GenerateToken(&user)
+	sendAccountRecoveryEmail(user.Email, user.Name, user.Surname, token)
+	return user, http.StatusOK
+}
+
+func sendAccountRecoveryEmail(email, name, surname, token string) {
+
+	// Sender data.
+	from := "bezbednostsomn@yahoo.com"
+	password := "fcmhbptswmwtphum"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.mail.yahoo.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "bezbednostsomn@yahoo.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", email)
+	subject := "Account recovery\r\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+	body := "<p>Dear " + name + " " + surname + ",</p>"
+	verifyURL := "http://localhost:4200/changePassword/" + token
+	body = body + "<h3><a href=\"" + verifyURL + "\">RECOVER ACCOUNT</a></h3>"
+	body = body + "<p>Thank you,<br>Agents App</p>"
+
+	msg := fromMessage + toMessage + subject + mime + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email sent successfully!")
+}
+
+func (ts *CompanyStore) ChangePassword(id int, password string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{ID: id})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	user.Password = utils.HashPassword(password)
+	ts.db.Save(&user)
+	return user, http.StatusOK
+}
+
+func (ts *CompanyStore) VerifyAccount(token string) (string, int) {
+	var user User
+	result := ts.db.Find(&user, User{Token: token})
+	if result.RowsAffected == 0 {
+		return "", http.StatusNotFound
+	}
+	if time.Since(user.TokenCreationDate).Minutes() <= 10 {
+		user.IsVerified = true
+		ts.db.Save(&user)
+
+		secretKey := os.Getenv("JWT_SECRET_KEY")
+		wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+		token, _ := wrapper.GenerateToken(&user)
+		return token, http.StatusOK
+	}
+
+	return "", http.StatusOK
 }
 
 func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
@@ -415,6 +620,9 @@ func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
 	match := utils.CheckPasswordHash(loginReq.Password, user.Password)
 	if !match {
 		return "", http.StatusNotFound
+	}
+	if user.IsVerified == false {
+		return "", http.StatusUnauthorized
 	}
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}

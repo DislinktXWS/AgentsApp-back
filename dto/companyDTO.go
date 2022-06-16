@@ -102,3 +102,7 @@ type Connection struct {
 	ID     int    `json:"ID"`
 	ApiKey string `json:"apiKey"`
 }
+
+type Password struct {
+	Password string `json:"password"`
+}
