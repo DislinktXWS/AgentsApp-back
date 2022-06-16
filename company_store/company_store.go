@@ -33,11 +33,11 @@ func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
 	host := "localhost"
-	user := os.Getenv("POSTGRES_USERNAME")
-	password := os.Getenv("POSTGRES_PASSWORD")
+	//user := os.Getenv("POSTGRES_USERNAME")
+	//password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
 	dbport := "5432"
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
+	dsn := fmt.Sprintf("host=%s user=postgres password=ftn dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, dbname, dbport)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
