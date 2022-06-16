@@ -16,7 +16,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@master
       - name: Build
-        run: go run main.go company_server.go
+        run: go run main.go company_server.go company_handler.go
       - name: Analyze with SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
         env:
