@@ -67,6 +67,7 @@ func main() {
 	router.HandleFunc("/registration", server.registerHandler).Methods("POST")
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
 	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
+	router.HandleFunc("/verifyAccount/{token}", server.verifyAccountHandler).Methods("GET")
 
 	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router)}
 	go func() {
@@ -76,6 +77,11 @@ func main() {
 				log.Fatal(err)
 			}
 		}
+		/*if err := http.ListenAndServeTLS("0.0.0.0:9000", "D:\\localhost.crt", "D:\\localhost.key", ch(router)); err != nil {
+			if err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
+		}*/
 	}()
 
 	<-quit

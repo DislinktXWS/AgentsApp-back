@@ -342,6 +342,17 @@ func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Reques
 	renderJSON(w, dto.ResponseId{Id: user.ID})
 }
 
+func (ts *CompanyServer) verifyAccountHandler(w http.ResponseWriter, req *http.Request) {
+	token, _ := mux.Vars(req)["token"]
+	jwtToken, status := ts.store.VerifyAccount(token)
+
+	if status != 200 {
+		return
+	}
+
+	renderJSON(w, dto.ResponseLogin{Token: jwtToken})
+}
+
 func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(contentType)
