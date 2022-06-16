@@ -33,8 +33,8 @@ func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
 	host := "localhost"
-	user := "postgres"
-	password := "ftn"
+	user := os.Getenv("POSTGRES_USERNAME")
+	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
 	dbport := "5432"
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
