@@ -32,12 +32,12 @@ type ApiKey struct {
 func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
-	host := "localhost"
-	//user := os.Getenv("POSTGRES_USERNAME")
-	//password := os.Getenv("POSTGRES_PASSWORD")
+	/*host := "localhost"
+	user := os.Getenv("POSTGRES_USERNAME")
+	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
-	dbport := "5432"
-	dsn := fmt.Sprintf("host=%s user=postgres password=ftn dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, dbname, dbport)
+	dbport := "5432"*/
+	dsn := "host=localhost user=postgres password=ftn dbname=AgentDB port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
