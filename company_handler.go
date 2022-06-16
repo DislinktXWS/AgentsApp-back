@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"modules/dto"
 	"net/http"
@@ -388,6 +389,34 @@ func (ts *CompanyServer) passwordlessLoginHandler(w http.ResponseWriter, req *ht
 	renderJSON(w, dto.ResponseId{Id: user.ID})
 }
 
+func (ts *CompanyServer) accountRecoveryHandler(w http.ResponseWriter, req *http.Request) {
+	email, _ := mux.Vars(req)["email"]
+
+	user, status := ts.store.AccountRecovery(email)
+	if status != 200 {
+		return
+	}
+	renderJSON(w, dto.ResponseId{Id: user.ID})
+}
+
+func (ts *CompanyServer) changePasswordHandler(w http.ResponseWriter, req *http.Request) {
+	id, _ := mux.Vars(req)["id"]
+	userId, _ := strconv.Atoi(id)
+
+	log.Println(req.Body)
+	password, err := decodePassword(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user, status := ts.store.ChangePassword(userId, password.Password)
+	if status != 200 {
+		return
+	}
+	renderJSON(w, dto.ResponseId{Id: user.ID})
+}
+
 func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetComment(id)
@@ -423,6 +452,16 @@ func decodeAcceptRequest(r io.Reader) (*dto.RequestAcceptCompany, error) {
 func decodeUser(r io.Reader) (*dto.RequestUser, error) {
 	dec := json.NewDecoder(r)
 	var rc dto.RequestUser
+	if err := dec.Decode(&rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func decodePassword(r io.Reader) (*dto.Password, error) {
+	dec := json.NewDecoder(r)
+	log.Println(r)
+	var rc dto.Password
 	if err := dec.Decode(&rc); err != nil {
 		return nil, err
 	}

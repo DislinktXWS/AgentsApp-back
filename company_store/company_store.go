@@ -419,7 +419,6 @@ func (ts *CompanyStore) generateVerificationToken(userId int) string {
 	if result.RowsAffected > 0 {
 		user.Token = token
 		user.TokenCreationDate = time.Now()
-		user.IsVerified = false
 	}
 	ts.db.Save(&user)
 	return token
@@ -529,13 +528,77 @@ func sendPasswordlessLoginEmail(email, name, surname, token string) {
 	fmt.Println("Email sent successfully!")
 }
 
+func (ts *CompanyStore) AccountRecovery(email string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{Email: email})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+	token, _ := wrapper.GenerateToken(&user)
+	sendAccountRecoveryEmail(user.Email, user.Name, user.Surname, token)
+	return user, http.StatusOK
+}
+
+func sendAccountRecoveryEmail(email, name, surname, token string) {
+
+	// Sender data.
+	from := "bezbednostsomn@yahoo.com"
+	password := "fcmhbptswmwtphum"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.mail.yahoo.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "bezbednostsomn@yahoo.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", email)
+	subject := "Account recovery\r\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+	body := "<p>Dear " + name + " " + surname + ",</p>"
+	verifyURL := "http://localhost:4200/changePassword/" + token
+	body = body + "<h3><a href=\"" + verifyURL + "\">RECOVER ACCOUNT</a></h3>"
+	body = body + "<p>Thank you,<br>Agents App</p>"
+
+	msg := fromMessage + toMessage + subject + mime + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email sent successfully!")
+}
+
+func (ts *CompanyStore) ChangePassword(id int, password string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{ID: id})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	user.Password = utils.HashPassword(password)
+	ts.db.Save(&user)
+	return user, http.StatusOK
+}
+
 func (ts *CompanyStore) VerifyAccount(token string) (string, int) {
 	var user User
 	result := ts.db.Find(&user, User{Token: token})
 	if result.RowsAffected == 0 {
 		return "", http.StatusNotFound
 	}
-	if time.Now().Sub(user.TokenCreationDate).Minutes() <= 10 {
+	if time.Since(user.TokenCreationDate).Minutes() <= 10 {
 		user.IsVerified = true
 		ts.db.Save(&user)
 
@@ -557,6 +620,9 @@ func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
 	match := utils.CheckPasswordHash(loginReq.Password, user.Password)
 	if !match {
 		return "", http.StatusNotFound
+	}
+	if user.IsVerified == false {
+		return "", http.StatusUnauthorized
 	}
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
