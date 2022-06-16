@@ -407,12 +407,12 @@ func sendEmail(apiKey string) {
 func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {
 	user := UserMapper(&userReq)
 	ts.db.Create(&user)
-	token := ts.generateVerificationToken(userReq.Email, user.ID)
+	token := ts.generateVerificationToken(user.ID)
 	sendRegistrationEmail(userReq.Email, userReq.Name, userReq.Surname, token)
 	return user
 }
 
-func (ts *CompanyStore) generateVerificationToken(email string, userId int) string {
+func (ts *CompanyStore) generateVerificationToken(userId int) string {
 	token := encodeToString(6)
 	var user User
 	result := ts.db.Find(&user, User{ID: userId})
@@ -462,6 +462,57 @@ func sendRegistrationEmail(email, name, surname, token string) {
 	body := "<p>Dear " + name + " " + surname + ",</p>"
 	verifyURL := "http://localhost:4200/verification/" + token
 	body = body + "<h3><a href=\"" + verifyURL + "\">VERIFY ACCOUNT</a></h3>"
+	body = body + "<p>Thank you,<br>Agents App</p>"
+
+	msg := fromMessage + toMessage + subject + mime + body
+	fmt.Println(msg)
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email sent successfully!")
+}
+
+func (ts *CompanyStore) PasswordlessLogin(email string) (User, int) {
+	var user User
+	result := ts.db.Find(&user, User{Email: email})
+	if result.RowsAffected == 0 {
+		return user, http.StatusNotFound
+	}
+	token := ts.generateVerificationToken(user.ID)
+	sendPasswordlessLoginEmail(user.Email, user.Name, user.Surname, token)
+	return user, http.StatusOK
+}
+
+func sendPasswordlessLoginEmail(email, name, surname, token string) {
+
+	// Sender data.
+	from := "bezbednostsomn@yahoo.com"
+	password := "fcmhbptswmwtphum"
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.mail.yahoo.com"
+	smtpPort := "587"
+
+	// Message.
+	fromMessage := fmt.Sprintf("From: <%s>\r\n", "bezbednostsomn@yahoo.com")
+	toMessage := fmt.Sprintf("To: <%s>\r\n", email)
+	subject := "Passwordless log in\r\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+
+	body := "<p>Dear " + name + " " + surname + ",</p>"
+	verifyURL := "http://localhost:4200/verification/" + token
+	body = body + "<h3><a href=\"" + verifyURL + "\">LOG IN</a></h3>"
 	body = body + "<p>Thank you,<br>Agents App</p>"
 
 	msg := fromMessage + toMessage + subject + mime + body

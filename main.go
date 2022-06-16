@@ -68,6 +68,7 @@ func main() {
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
 	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
 	router.HandleFunc("/verifyAccount/{token}", server.verifyAccountHandler).Methods("GET")
+	router.HandleFunc("/passwordlessLogin/{email}", server.passwordlessLoginHandler).Methods("GET")
 
 	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router)}
 	go func() {

@@ -378,6 +378,16 @@ func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) 
 	renderJSON(w, dto.ResponseLogin{Token: token})
 }
 
+func (ts *CompanyServer) passwordlessLoginHandler(w http.ResponseWriter, req *http.Request) {
+	email, _ := mux.Vars(req)["email"]
+
+	user, status := ts.store.PasswordlessLogin(email)
+	if status != 200 {
+		return
+	}
+	renderJSON(w, dto.ResponseId{Id: user.ID})
+}
+
 func (ts *CompanyServer) getCommentHandler(w http.ResponseWriter, req *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(req)["id"])
 	task, err := ts.store.GetComment(id)
