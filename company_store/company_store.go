@@ -17,7 +17,13 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+)
+
+var (
+	InfoLogger  *log.Logger
+	ErrorLogger *log.Logger
 )
 
 type CompanyStore struct {
@@ -31,7 +37,7 @@ type ApiKey struct {
 func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
-	/*host := "localhost"
+	host := "localhost"
 	user := os.Getenv("POSTGRES_USERNAME")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
@@ -45,7 +51,19 @@ func New() (*CompanyStore, error) {
 	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{})
 	if err != nil {
 		return nil, err
-	}*/
+	}
+
+	infoFile, err := os.OpenFile("logs/info.log", os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	InfoLogger = log.New(infoFile, "INFO: ", log.LstdFlags|log.Lshortfile)
+
+	errFile, err1 := os.OpenFile("logs/error.log", os.O_APPEND|os.O_WRONLY, 0666)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+	ErrorLogger = log.New(errFile, "ERROR: ", log.LstdFlags|log.Lshortfile)
 
 	return ts, nil
 }
@@ -53,6 +71,7 @@ func New() (*CompanyStore, error) {
 func (ts *CompanyStore) CreateCompany(companyReq dto.RequestCompany) int {
 	company := CompanyMapper(&companyReq)
 	ts.db.Create(&company)
+	InfoLogger.Println("Action: 1, Message: Company " + company.Name + " created")
 	return company.ID
 }
 
@@ -70,6 +89,7 @@ func (ts *CompanyStore) UpdateCompany(companyReq dto.RequestCompany) int {
 	company.Website = companyReq.Website
 	company.YearOfEstablishment = companyReq.YearOfEstablishment
 	ts.db.Save(&company)
+	InfoLogger.Println("Action: 2, Message: Company " + company.Name + " updated")
 	return company.ID
 }
 
@@ -81,7 +101,11 @@ func (ts *CompanyStore) AcceptCompany(companyReq dto.RequestAcceptCompany) int {
 		result := ts.db.Find(&company, Company{ID: companyReq.ID})
 		if result.RowsAffected > 0 {
 			ts.db.Model(&User{}).Where("id = ?", company.OwnerID).Update("role", 2)
+			InfoLogger.Println("Action: 3, Message: Company " + company.Name + " accepted")
 		}
+	}
+	if !companyReq.Accept {
+		ErrorLogger.Println("Action: 3, Message: Company rejected")
 	}
 	return companyReq.ID
 }
@@ -129,6 +153,7 @@ func (ts *CompanyStore) GetOwnersCompanies(id int) ([]Company, error) {
 	if result.RowsAffected > 0 {
 		return company, nil
 	}
+	ErrorLogger.Println("Action: 4, Message: Owner " + ownerID + " does not have any company.")
 
 	return company, fmt.Errorf("company with ownerId=%d not found", id)
 }
@@ -142,6 +167,8 @@ func (ts *CompanyStore) GetCompanyById(id int) (Company, error) {
 		return company, nil
 	}
 
+	ErrorLogger.Println("Action: 4, Message: Company by the id " + companyID + " does not exist.")
+
 	return company, fmt.Errorf("company with ownerId=%d not found", id)
 }
 
@@ -153,7 +180,7 @@ func (ts *CompanyStore) GetJobSalary(id int) ([]JobSalary, error) {
 	if result.RowsAffected > 0 {
 		return jobSalaries, nil
 	}
-
+	ErrorLogger.Println("Action: 4, Message: Company by the id " + companyID + " does not have any salaries.")
 	return jobSalaries, fmt.Errorf("company with id = %d does not have any public salaries", id)
 }
 
@@ -164,6 +191,8 @@ func (ts *CompanyStore) IsConnected(id int) (bool, error) {
 	if result.RowsAffected > 0 {
 		return user.IsConnected, nil
 	}
+	ErrorLogger.Println("Action: 4, Message: User by the id " + userId + " does not exist.")
+
 	return false, fmt.Errorf("user not found")
 }
 
@@ -184,6 +213,7 @@ func (ts *CompanyStore) GetUserApiKey(id int) string {
 	if result.RowsAffected > 0 {
 		return user.ApiKey
 	}
+
 	return ""
 }
 
@@ -192,19 +222,21 @@ func (ts *CompanyStore) DeleteJobSalary(id int) error {
 	if result.RowsAffected > 0 {
 		return nil
 	}
-
+	ErrorLogger.Println("Action: 4, Message: Job salary does not exist.")
 	return fmt.Errorf("job position with id = %d not found", id)
 }
 
 func (ts *CompanyStore) CreateJobSalary(jobSalaryReq dto.RequestJobSalary) int {
 	jobSalary := JobSalaryMapper(&jobSalaryReq)
 	ts.db.Create(&jobSalary)
+	InfoLogger.Println("Action: 5, Message: New job salary.")
 	return jobSalary.ID
 }
 
 func (ts *CompanyStore) CreateJobInterview(jobInterviewReq dto.RequestJobInterview) int {
 	jobInterview := JobInterviewMapper(&jobInterviewReq)
 	ts.db.Create(&jobInterview)
+	InfoLogger.Println("Action: 6, Message: New job interview.")
 	return jobInterview.ID
 }
 
@@ -216,7 +248,7 @@ func (ts *CompanyStore) GetJobInterview(id int) ([]JobInterview, error) {
 	if result.RowsAffected > 0 {
 		return interviews, nil
 	}
-
+	ErrorLogger.Println("Action: 4, Message: Job interview for the company does not exist.")
 	return interviews, fmt.Errorf("company with id=%d does not have any interviews feed", id)
 }
 
@@ -226,6 +258,8 @@ func (ts *CompanyStore) CreateJobPosition(jobPositionReq dto.RequestJobPosition)
 		skill.ID = jobPosition.ID
 	}
 	ts.db.Create(&jobPosition)
+	InfoLogger.Println("Action: 7, Message: New job position.")
+
 	return jobPosition.ID
 }
 
@@ -244,27 +278,28 @@ func (ts *CompanyStore) ShareJobPosition(jobPositionReq dto.RequestJobPosition, 
 
 	jsonVal, err := json.Marshal(jobPosition)
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 9, Message: Invalid json value.")
 	}
 
 	//http request
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8000/shareBusinessOffer", bytes.NewBuffer(jsonVal))
+	req, err := http.NewRequest(http.MethodPost, "https://localhost:8000/shareBusinessOffer", bytes.NewBuffer(jsonVal))
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 9, Message: Dislinkt app is not available.")
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset-utf-8")
 	req.Header.Set("ApiKey", apiKey)
 	resp, _ := client.Do(req)
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 9, Message: Response is not valid.")
 	}
 
 	if resp.StatusCode == 500 {
+		ErrorLogger.Println("Action: 9, Message: Response is not valid.")
 		return false, -1
 	}
 	resp.Body.Close()
-
+	InfoLogger.Println("Action: 8, Message: Job position shared.")
 	return true, jobPosition.ID
 }
 
@@ -274,6 +309,7 @@ func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
 	result := ts.db.Find(&jobPositions, "company_id = "+ownerID)
 
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 4, Message: Company does not have any new positions.")
 		return jobPositions, fmt.Errorf("company with id=%d does not have any new positions", id)
 	}
 
@@ -290,6 +326,7 @@ func (ts *CompanyStore) GetJobPosition(id int) ([]JobPosition, error) {
 func (ts *CompanyStore) CreateComment(commentReq dto.RequestComment) int {
 	jobInterview := CommentMapper(&commentReq)
 	ts.db.Create(&jobInterview)
+	InfoLogger.Println("Action: 10, Message: New comment created.")
 	return jobInterview.ID
 }
 
@@ -301,12 +338,14 @@ func (ts *CompanyStore) ConnectWithDislinkt(username string, id int) string {
 		var user User
 		result := ts.db.Find(&user, User{ID: id})
 		if result.RowsAffected > 0 {
+			InfoLogger.Println("Action: 11, Message: Connected with dislinkt.")
 			user.IsConnected = true
 			user.ApiKey = apiKey
 		}
 		ts.db.Save(&user)
 		fmt.Println(apiKey)
 	} else {
+		ErrorLogger.Println("Action: 12, Message: cannot connect with dislinkt.")
 		fmt.Println("Username does not exist")
 	}
 
@@ -315,16 +354,16 @@ func (ts *CompanyStore) ConnectWithDislinkt(username string, id int) string {
 
 func checkIfUserExists(username string) bool {
 
-	resp, err := http.Get("http://localhost:8000/users/userByUsername/" + username)
+	resp, err := http.Get("https://localhost:8000/users/userByUsername/" + username)
 	if err != nil {
-		log.Printf("Request Failed: %s", err)
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return false
 	}
 
 	//We Read the response body on the line below
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		ErrorLogger.Println("Action: 13, Message: Invalid response from dislinkt.")
 		return false
 	}
 
@@ -336,6 +375,7 @@ func checkIfUserExists(username string) bool {
 	//Convert the body to type string
 	sb := string(body)
 	log.Printf(sb)
+	InfoLogger.Println("Action: 14, Message: User found.")
 	return true
 }
 
@@ -344,19 +384,20 @@ func changeApiKey(username string) string {
 
 	jsonVal, err := json.Marshal(username)
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 15, Message: Invalid json value.")
 	}
 
 	//http request
-	req, err := http.NewRequest(http.MethodPut, "http://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(jsonVal))
+	req, err := http.NewRequest(http.MethodPut, "https://localhost:8000/users/user/apiKey/"+username, bytes.NewBuffer(jsonVal))
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 12, Message: Invalid request.")
+
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset-utf-8")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf(err.Error())
+		ErrorLogger.Println("Action: 12, Message: Invalid response.")
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -365,6 +406,7 @@ func changeApiKey(username string) string {
 	split := strings.Split(bodyData, "\"apiKey\":")
 	split2 := strings.Split(split[1], "\"")
 	resp.Body.Close()
+	InfoLogger.Println("Action: 16, Message: Successfully changed api key.s")
 	return split2[1]
 }
 
@@ -397,10 +439,10 @@ func sendEmail(apiKey string) {
 	// Sending email.
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println("Action: 17, Message: Cannot send email.")
 		return
 	}
-	fmt.Println("Email Sent Successfully!")
+	InfoLogger.Println("Action: 18, Message: Email sent successfully")
 }
 
 func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {
@@ -408,6 +450,7 @@ func (ts *CompanyStore) RegisterUser(userReq dto.RequestUser) User {
 	ts.db.Create(&user)
 	token := ts.generateVerificationToken(user.ID)
 	sendRegistrationEmail(userReq.Email, userReq.Name, userReq.Surname, token)
+	InfoLogger.Println("Action: 19, Message: User registered.")
 	return user
 }
 
@@ -416,6 +459,7 @@ func (ts *CompanyStore) generateVerificationToken(userId int) string {
 	var user User
 	result := ts.db.Find(&user, User{ID: userId})
 	if result.RowsAffected > 0 {
+		InfoLogger.Println("Action: 20, Message: Token created.")
 		user.Token = token
 		user.TokenCreationDate = time.Now()
 	}
@@ -470,16 +514,17 @@ func sendRegistrationEmail(email, name, surname, token string) {
 	// Sending email.
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println("Action: 17, Message: Cannot send email.")
 		return
 	}
-	fmt.Println("Email sent successfully!")
+	InfoLogger.Println("Action: 18, Message: Email sent successfully")
 }
 
 func (ts *CompanyStore) PasswordlessLogin(email string) (User, int) {
 	var user User
 	result := ts.db.Find(&user, User{Email: email})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return user, http.StatusNotFound
 	}
 	token := ts.generateVerificationToken(user.ID)
@@ -521,16 +566,17 @@ func sendPasswordlessLoginEmail(email, name, surname, token string) {
 	// Sending email.
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println("Action: 17, Message: Cannot send email.")
 		return
 	}
-	fmt.Println("Email sent successfully!")
+	InfoLogger.Println("Action: 18, Message: Email sent successfully")
 }
 
 func (ts *CompanyStore) AccountRecovery(email string) (User, int) {
 	var user User
 	result := ts.db.Find(&user, User{Email: email})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return user, http.StatusNotFound
 	}
 	secretKey := os.Getenv("JWT_SECRET_KEY")
@@ -574,19 +620,22 @@ func sendAccountRecoveryEmail(email, name, surname, token string) {
 	// Sending email.
 	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(msg))
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println("Action: 17, Message: Cannot send email.")
 		return
 	}
-	fmt.Println("Email sent successfully!")
+	InfoLogger.Println("Action: 18, Message: Email sent successfully")
+
 }
 
 func (ts *CompanyStore) ChangePassword(id int, password string) (User, int) {
 	var user User
 	result := ts.db.Find(&user, User{ID: id})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return user, http.StatusNotFound
 	}
 	user.Password = utils.HashPassword(password)
+	InfoLogger.Println("Action: 25, Message: User changed password.")
 	ts.db.Save(&user)
 	return user, http.StatusOK
 }
@@ -595,18 +644,19 @@ func (ts *CompanyStore) VerifyAccount(token string) (string, int) {
 	var user User
 	result := ts.db.Find(&user, User{Token: token})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return "", http.StatusNotFound
 	}
 	if time.Since(user.TokenCreationDate).Minutes() <= 10 {
 		user.IsVerified = true
 		ts.db.Save(&user)
-
+		InfoLogger.Println("Action: 22, Message: User account verified.")
 		secretKey := os.Getenv("JWT_SECRET_KEY")
 		wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
 		token, _ := wrapper.GenerateToken(&user)
 		return token, http.StatusOK
 	}
-
+	ErrorLogger.Println("Action: 21, Message: Token expired")
 	return "", http.StatusOK
 }
 
@@ -614,18 +664,22 @@ func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
 	var user User
 	result := ts.db.Find(&user, User{Username: loginReq.Username})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return "", http.StatusNotFound
 	}
 	match := utils.CheckPasswordHash(loginReq.Password, user.Password)
 	if !match {
+		ErrorLogger.Println("Action: 23, Message: Wrong email or password.")
 		return "", http.StatusNotFound
 	}
 	if user.IsVerified == false {
+		ErrorLogger.Println("Action: 23, Message: User not verified.")
 		return "", http.StatusUnauthorized
 	}
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
 	token, _ := wrapper.GenerateToken(&user)
+	InfoLogger.Println("Action: 24, Message: Login successful.")
 	return token, http.StatusOK
 }
 
@@ -637,7 +691,7 @@ func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {
 	if result.RowsAffected > 0 {
 		return comments, nil
 	}
-
+	ErrorLogger.Println("Action: 4, Message: Company has no comments.")
 	return comments, fmt.Errorf("company with id=%d does not have any new comments", id)
 }
 
@@ -646,13 +700,16 @@ func (ts *CompanyStore) Validate(token string) (int, int, string, int) {
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
 	claims, err := wrapper.ValidateToken(token)
 	if err != nil {
+		ErrorLogger.Println("Action: 21, Message: Token is not valid")
 		return http.StatusBadRequest, -1, "", -1
 	}
 	var user User
 	result := ts.db.Find(&user, User{Username: claims.Username})
 	if result.RowsAffected == 0 {
+		ErrorLogger.Println("Action: 13, Message: User not found.")
 		return http.StatusBadRequest, -1, "", -1
 	}
+	InfoLogger.Println("Action: 22, Message: User validated.")
 	return http.StatusOK, claims.Id, claims.Username, claims.Role
 }
 

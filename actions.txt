@@ -1,0 +1,25 @@
+1: Company created.
+2: Company updated.
+3: Company request handled by admin.
+4: Cannot find entity.
+5: Job salary created.
+6: Job interview created.
+7: Job position created.
+8: Job position shared.
+9: Cannot share job position.
+10: Comment created.
+11: Connected with dislinkt.
+12: Cannot connect with dislinkt.
+13: User not found.
+14: User found on dislinkt.
+15: Cannot change API key.
+16: API key changed.
+17: Cannot send email.
+18: Email sent successfully.
+19: User registered.
+20: Token generated.
+21: Token is not valid.
+22: Token is valid.
+23: Credentials are not valid.
+24: User logged in successfully.
+25: User changed password.

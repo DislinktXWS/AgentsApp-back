@@ -72,19 +72,19 @@ func main() {
 	router.HandleFunc("/accountRecovery/{email}", server.accountRecoveryHandler).Methods("GET")
 	router.HandleFunc("/changePassword/{id}", server.changePasswordHandler).Methods("POST")
 
-	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router)}
+	//srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router), }
 	go func() {
 		log.Println("server starting")
-		if err := srv.ListenAndServe(); err != nil {
-			if err != http.ErrServerClosed {
-				log.Fatal(err)
-			}
-		}
-		/*if err := http.ListenAndServeTLS("0.0.0.0:9000", "D:\\localhost.crt", "D:\\localhost.key", ch(router)); err != nil {
+		/*if err := srv.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
 				log.Fatal(err)
 			}
 		}*/
+		if err := http.ListenAndServeTLS("0.0.0.0:9000", "agent.crt", "agent.key", ch(router)); err != nil {
+			if err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
+		}
 	}()
 
 	<-quit
@@ -92,12 +92,12 @@ func main() {
 	log.Println("service shutting down ...")
 
 	// gracefully stop server
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	/*if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 	log.Println("server stopped")
 }
