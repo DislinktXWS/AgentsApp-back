@@ -71,6 +71,9 @@ func main() {
 	router.HandleFunc("/passwordlessLogin/{email}", server.passwordlessLoginHandler).Methods("GET")
 	router.HandleFunc("/accountRecovery/{email}", server.accountRecoveryHandler).Methods("GET")
 	router.HandleFunc("/changePassword/{id}", server.changePasswordHandler).Methods("POST")
+	router.HandleFunc("/getTwoFactor/{username}", server.getTwoFactorAuthHandler).Methods("GET")
+	router.HandleFunc("/editTwoFactor/{username}", server.changeTwoFactorAuthHandler).Methods("PUT")
+	router.HandleFunc("/twoFactorAuth/{username}/{token}", server.verifyTwoFactorAuthTokenHandler).Methods("GET")
 
 	srv := &http.Server{Addr: "0.0.0.0:9000", Handler: ch(router)}
 	go func() {
