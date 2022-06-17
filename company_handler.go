@@ -337,6 +337,7 @@ func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Reques
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+
 	}
 
 	user := ts.store.RegisterUser(*rt)
@@ -352,6 +353,35 @@ func (ts *CompanyServer) verifyAccountHandler(w http.ResponseWriter, req *http.R
 	}
 
 	renderJSON(w, dto.ResponseLogin{Token: jwtToken})
+}
+
+func (ts *CompanyServer) verifyTwoFactorAuthTokenHandler(w http.ResponseWriter, req *http.Request) {
+	username, _ := mux.Vars(req)["username"]
+	token, _ := mux.Vars(req)["token"]
+	status, err, JWTtoken := ts.store.VerifyTwoFactorAuthToken(username, token)
+	if status != 200 {
+		return
+	}
+	renderJSON(w, dto.ResponseVerifyTwoFactorToken{
+		Status: status,
+		Error:  err,
+		Token:  JWTtoken,
+	})
+}
+
+func (ts *CompanyServer) getTwoFactorAuthHandler(w http.ResponseWriter, req *http.Request) {
+	username, _ := mux.Vars(req)["username"]
+	flag := ts.store.GetTwoFactorAuth(username)
+	renderJSON(w, dto.ResponseGetTwoFactorAuth{IsEnabled: flag})
+}
+
+func (ts *CompanyServer) changeTwoFactorAuthHandler(w http.ResponseWriter, req *http.Request) {
+	username, _ := mux.Vars(req)["username"]
+	qrCode, err := ts.store.ChangeTwoFactorAuth(username)
+	renderJSON(w, dto.ResponseChangeTwoFactorAuth{
+		QrCode: qrCode,
+		Error:  err,
+	})
 }
 
 func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) {
@@ -371,12 +401,15 @@ func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	token, status := ts.store.LoginUser(*rt)
+	token, status, twoAuth := ts.store.LoginUser(*rt)
 	if status != 200 {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	renderJSON(w, dto.ResponseLogin{Token: token})
+	fmt.Println(token)
+	fmt.Println(status)
+	fmt.Println(twoAuth)
+	renderJSON(w, dto.ResponseLogin{Token: token, TwoFactor: twoAuth})
 }
 
 func (ts *CompanyServer) passwordlessLoginHandler(w http.ResponseWriter, req *http.Request) {

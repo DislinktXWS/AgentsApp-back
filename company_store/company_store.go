@@ -2,7 +2,9 @@ package company_store
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +21,8 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/sec51/twofactor"
 )
 
 type CompanyStore struct {
@@ -37,18 +41,60 @@ func New() (*CompanyStore, error) {
 	//password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
 	dbport := "5432"
-	dsn := fmt.Sprintf("host=%s user=postgres password=ftn dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, dbname, dbport)
+	dsn := fmt.Sprintf("host=%s user=postgres password=nina dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, dbname, dbport)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 	ts.db = db
-	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{})
+	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{}, &TwoFactorAuth{})
 	if err != nil {
 		return nil, err
 	}
 
 	return ts, nil
+}
+
+func (ts *CompanyStore) VerifyTwoFactorAuthToken(username string, twoFactorAuthToken string) (status int64, error string, JWTtoken string) {
+	var two_factor_auth TwoFactorAuth
+	ts.db.Find(&two_factor_auth, "username = ?", username)
+	var user User
+	ts.db.Find(&user, "username = ?", username)
+	otp, _ := twofactor.TOTPFromBytes(two_factor_auth.Totp, username)
+	err := otp.Validate(twoFactorAuthToken)
+	if err != nil {
+		return http.StatusNotFound, err.Error(), ""
+	}
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
+	token, _ := wrapper.GenerateToken(&user)
+	return http.StatusOK, "", token
+}
+
+func (ts *CompanyStore) GetTwoFactorAuth(username string) bool {
+	var user User
+	ts.db.Find(&user, "username = ?", username)
+	return user.TwoAuth
+}
+
+func (ts *CompanyStore) ChangeTwoFactorAuth(username string) (qrCode string, error string) {
+	var user User
+	ts.db.Find(&user, "username = ?", username)
+	if user.TwoAuth == true {
+		ts.db.Model(&User{}).Where("id = ?", user.ID).Update("two_auth", false)
+		var two_factor TwoFactorAuth
+		ts.db.Find(&two_factor, "username = ?", username)
+		ts.db.Delete(&TwoFactorAuth{}, two_factor.Id)
+	} else {
+		ts.db.Model(&User{}).Where("id = ?", user.ID).Update("two_auth", true)
+		otp, _ := twofactor.NewTOTP(user.Email, user.Username, crypto.SHA1, 6)
+		qrBytes, _ := otp.QR()
+		base64QR := base64.StdEncoding.EncodeToString(qrBytes)
+		twoFact := TwoAuthMapper(username, otp)
+		ts.db.Create(&twoFact)
+		return base64QR, ""
+	}
+	return "", ""
 }
 
 func (ts *CompanyStore) CreateCompany(companyReq dto.RequestCompany) int {
@@ -611,23 +657,23 @@ func (ts *CompanyStore) VerifyAccount(token string) (string, int) {
 	return "", http.StatusOK
 }
 
-func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int) {
+func (ts *CompanyStore) LoginUser(loginReq dto.RequestLogin) (string, int, bool) {
 	var user User
 	result := ts.db.Find(&user, User{Username: loginReq.Username})
 	if result.RowsAffected == 0 {
-		return "", http.StatusNotFound
+		return "", http.StatusNotFound, user.TwoAuth
 	}
 	match := utils.CheckPasswordHash(loginReq.Password, user.Password)
 	if !match {
-		return "", http.StatusNotFound
+		return "", http.StatusNotFound, user.TwoAuth
 	}
 	if user.IsVerified == false {
-		return "", http.StatusUnauthorized
+		return "", http.StatusUnauthorized, user.TwoAuth
 	}
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	wrapper := JwtWrapper{SecretKey: secretKey, ExpirationHours: 1}
 	token, _ := wrapper.GenerateToken(&user)
-	return token, http.StatusOK
+	return token, http.StatusOK, user.TwoAuth
 }
 
 func (ts *CompanyStore) GetComment(id int) ([]Comment, error) {

@@ -91,7 +91,8 @@ type RequestLogin struct {
 	Password string `json:"password"`
 }
 type ResponseLogin struct {
-	Token string `json:"token"`
+	Token     string `json:"token"`
+	TwoFactor bool   `json:"twoFactor"`
 }
 type ResponseValidate struct {
 	ID       int    `json:"ID"`
@@ -105,4 +106,32 @@ type Connection struct {
 
 type Password struct {
 	Password string `json:"password"`
+}
+
+type RequestVerifyTwoFactorToken struct {
+	Username string `json:"username"`
+	Token    string `json:"token"`
+}
+
+type ResponseVerifyTwoFactorToken struct {
+	Status int64  `json:"status"`
+	Error  string `json:"error"`
+	Token  string `json:"token"`
+}
+
+type RequestGetTwoFactorAuth struct {
+	Username string `json:"username"`
+}
+
+type ResponseGetTwoFactorAuth struct {
+	IsEnabled bool `json:"isEnabled"`
+}
+
+type RequestChangeTwoFactorAuth struct {
+	Username string `json:"username"`
+}
+
+type ResponseChangeTwoFactorAuth struct {
+	QrCode string `json:"qrCode"`
+	Error  string `json:"error"`
 }

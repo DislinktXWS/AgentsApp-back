@@ -101,4 +101,11 @@ type User struct {
 	Token             string    `json:"token"`
 	TokenCreationDate time.Time `json:"tokenCreationDate"`
 	IsVerified        bool      `json:"isVerified"`
+	TwoAuth           bool      `json:"twoAuth"`
+}
+
+type TwoFactorAuth struct {
+	Id       int    `json:"id"`
+	Username string `json:"username"`
+	Totp     []byte `bson:"totp"`
 }
