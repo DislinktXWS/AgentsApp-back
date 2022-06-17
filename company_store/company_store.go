@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +32,7 @@ type ApiKey struct {
 func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
-	/*host := "localhost"
+	host := "localhost"
 	user := os.Getenv("POSTGRES_USERNAME")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
@@ -45,7 +46,7 @@ func New() (*CompanyStore, error) {
 	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{})
 	if err != nil {
 		return nil, err
-	}*/
+	}
 
 	return ts, nil
 }
