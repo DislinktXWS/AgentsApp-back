@@ -67,7 +67,7 @@ func main() {
 	router.HandleFunc("/registration", server.registerHandler).Methods("POST")
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
 	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
-	router.HandleFunc("/verifyAccount/{token}", server.verifyAccountHandler).Methods("GET")
+	router.HandleFunc("/verifyAccount/{token}/{email}", server.verifyAccountHandler).Methods("GET")
 	router.HandleFunc("/passwordlessLogin/{email}", server.passwordlessLoginHandler).Methods("GET")
 	router.HandleFunc("/accountRecovery/{email}", server.accountRecoveryHandler).Methods("GET")
 	router.HandleFunc("/changePassword/{id}", server.changePasswordHandler).Methods("POST")

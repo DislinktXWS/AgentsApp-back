@@ -19,10 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sec51/twofactor"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/sec51/twofactor"
 )
 
 type CompanyStore struct {
@@ -465,7 +464,7 @@ func (ts *CompanyStore) generateVerificationToken(userId int) string {
 	var user User
 	result := ts.db.Find(&user, User{ID: userId})
 	if result.RowsAffected > 0 {
-		user.Token = token
+		user.Token = utils.HashPassword(token)
 		user.TokenCreationDate = time.Now()
 	}
 	ts.db.Save(&user)
@@ -507,7 +506,7 @@ func sendRegistrationEmail(email, name, surname, token string) {
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	body := "<p>Dear " + name + " " + surname + ",</p>"
-	verifyURL := "http://localhost:4200/verification/" + token
+	verifyURL := "http://localhost:4200/verification/" + token + "/" + email
 	body = body + "<h3><a href=\"" + verifyURL + "\">VERIFY ACCOUNT</a></h3>"
 	body = body + "<p>Thank you,<br>Agents App</p>"
 
@@ -640,13 +639,17 @@ func (ts *CompanyStore) ChangePassword(id int, password string) (User, int) {
 	return user, http.StatusOK
 }
 
-func (ts *CompanyStore) VerifyAccount(token string) (string, int) {
+func (ts *CompanyStore) VerifyAccount(token, email string) (string, int) {
 	var user User
-	result := ts.db.Find(&user, User{Token: token})
+	result := ts.db.Find(&user, User{Email: email})
 	if result.RowsAffected == 0 {
 		return "", http.StatusNotFound
 	}
-	if time.Since(user.TokenCreationDate).Minutes() <= 10 {
+	foundToken := utils.CheckPasswordHash(token, user.Token)
+	if !foundToken {
+		return "", http.StatusBadRequest
+	}
+	if time.Since(user.TokenCreationDate).Minutes() <= 20 {
 		user.IsVerified = true
 		ts.db.Save(&user)
 

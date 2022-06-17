@@ -346,7 +346,8 @@ func (ts *CompanyServer) registerHandler(w http.ResponseWriter, req *http.Reques
 
 func (ts *CompanyServer) verifyAccountHandler(w http.ResponseWriter, req *http.Request) {
 	token, _ := mux.Vars(req)["token"]
-	jwtToken, status := ts.store.VerifyAccount(token)
+	email, _ := mux.Vars(req)["email"]
+	jwtToken, status := ts.store.VerifyAccount(token, email)
 
 	if status != 200 {
 		return
