@@ -1,9 +1,9 @@
 name: Build
 on:
   push:
-    branches: [develop]
+    branches: [develop, feat/sonar]
   pull_request:
-    branches: [develop]
+    branches: [develop, feat/sonar]
 jobs:
   build:
     name: Build and Analyze

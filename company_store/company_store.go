@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -36,8 +35,8 @@ func New() (*CompanyStore, error) {
 	user := os.Getenv("POSTGRES_USERNAME")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := "AgentDB"
-	dbport := "5432"*/
-	dsn := "host=localhost user=postgres password=ftn dbname=AgentDB port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	dbport := "5432"
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func New() (*CompanyStore, error) {
 	err = ts.db.AutoMigrate(&User{}, &Company{}, &JobSalary{}, &JobInterview{}, &JobPosition{}, &Comment{}, &Skills{})
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	return ts, nil
 }
