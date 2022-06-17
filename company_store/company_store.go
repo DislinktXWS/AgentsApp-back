@@ -37,8 +37,8 @@ func New() (*CompanyStore, error) {
 	ts := &CompanyStore{}
 
 	host := "localhost"
-	user := os.Getenv("POSTGRES_USERNAME")
-	password := os.Getenv("POSTGRES_PASSWORD")
+	user := "postgres"
+	password := "ftn"
 	dbname := "AgentDB"
 	dbport := "5432"
 
