@@ -42,7 +42,7 @@ func New() (*CompanyStore, error) {
 	dbname := "AgentDB"
 	dbport := "5432"
 
-	dsn := fmt.Sprintf("host=%s user=postgres password=nina dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, dbname, dbport)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbname, dbport)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
