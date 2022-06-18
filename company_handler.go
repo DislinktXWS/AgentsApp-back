@@ -385,6 +385,12 @@ func (ts *CompanyServer) changeTwoFactorAuthHandler(w http.ResponseWriter, req *
 	})
 }
 
+func (ts *CompanyServer) doesEmailExist(w http.ResponseWriter, req *http.Request) {
+	email, _ := mux.Vars(req)["email"]
+	exist := ts.store.DoesEmailExist(email)
+	renderJSON(w, exist)
+}
+
 func (ts *CompanyServer) loginHandler(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(contentType)
