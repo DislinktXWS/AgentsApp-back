@@ -639,6 +639,16 @@ func (ts *CompanyStore) ChangePassword(id int, password string) (User, int) {
 	return user, http.StatusOK
 }
 
+func (ts *CompanyStore) DoesEmailExist(email string) bool {
+	var user User
+	result := ts.db.Find(&user, User{Email: email})
+	if result.RowsAffected == 0 {
+		return false
+	} else {
+		return true
+	}
+}
+
 func (ts *CompanyStore) VerifyAccount(token, email string) (string, int) {
 	var user User
 	result := ts.db.Find(&user, User{Email: email})

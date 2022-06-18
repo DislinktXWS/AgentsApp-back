@@ -65,6 +65,7 @@ func main() {
 
 	//AUTH HANDLER
 	router.HandleFunc("/registration", server.registerHandler).Methods("POST")
+	router.HandleFunc("/emailExist/{email}", server.doesEmailExist).Methods("GET")
 	router.HandleFunc("/login", server.loginHandler).Methods("POST")
 	router.HandleFunc("/validate/{token}", server.validateHandler).Methods("GET")
 	router.HandleFunc("/verifyAccount/{token}/{email}", server.verifyAccountHandler).Methods("GET")
