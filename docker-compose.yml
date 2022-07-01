@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  servers:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: agents_app
+    container_name: agents_app
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 9000:9000
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - type: bind
+        source: ./logs/info.log
+        target: /root/logs/info.log
+      - type: bind
+        source: ./logs/error.log
+        target: /root/logs/error.log
+      - type: bind
+        source: ./agent.crt
+        target: /root/agent.crt
+      - type: bind
+        source: ./agent.key
+        target: /root/agent.key
+    depends_on:
+      - database
+
+  database:
+    image: postgres
+    container_name: postgres
+    restart: always
+    networks:
+      - servers
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: AgentsDB
+    volumes:
+      - type: volume
+        source: database-data
+        target: /var/lib/postgresql/data
+
+volumes:
+  database-data:
+    name: server-database
+
+networks:
+  servers:
+    name: servers
+    driver: bridge

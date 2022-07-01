@@ -3,3 +3,17 @@ INFO: 2022/06/17 15:22:47 company_store.go:682: Action: 24, Message: Login succe
 INFO: 2022/06/17 15:31:00 company_store.go:682: Action: 24, Message: Login successful.
 INFO: 2022/06/17 15:31:13 company_store.go:682: Action: 24, Message: Login successful.
 INFO: 2022/06/17 15:31:27 company_store.go:682: Action: 24, Message: Login successful.
+INFO: 2022/07/01 11:52:26 company_store.go:510: Action: 20, Message: Token created.
+INFO: 2022/07/01 11:52:30 company_store.go:568: Action: 18, Message: Email sent successfully
+INFO: 2022/07/01 11:52:30 company_store.go:501: Action: 19, Message: User registered.
+INFO: 2022/07/01 11:53:17 company_store.go:715: Action: 22, Message: User account verified.
+INFO: 2022/07/01 11:53:18 company_store.go:774: Action: 22, Message: User validated.
+INFO: 2022/07/01 11:53:18 company_store.go:774: Action: 22, Message: User validated.
+INFO: 2022/07/01 11:53:28 company_store.go:744: Action: 24, Message: Login successful.
+INFO: 2022/07/01 11:53:28 company_store.go:774: Action: 22, Message: User validated.
+INFO: 2022/07/01 11:53:29 company_store.go:774: Action: 22, Message: User validated.
+INFO: 2022/07/01 12:05:47 company_store.go:740: Action: 24, Message: Login successful.
+INFO: 2022/07/01 12:05:47 company_store.go:770: Action: 22, Message: User validated.
+INFO: 2022/07/01 12:05:48 company_store.go:770: Action: 22, Message: User validated.
+INFO: 2022/07/01 12:05:56 company_store.go:770: Action: 22, Message: User validated.
+INFO: 2022/07/01 12:06:05 company_store.go:770: Action: 22, Message: User validated.

@@ -1,2 +1,4 @@
 ERROR: 2022/06/17 15:20:28 company_store.go:672: Action: 23, Message: Wrong email or password.
 ERROR: 2022/06/17 15:20:50 company_store.go:672: Action: 23, Message: Wrong email or password.
+ERROR: 2022/07/01 12:05:57 company_store.go:200: Action: 4, Message: Owner 1 does not have any company.
+ERROR: 2022/07/01 12:06:04 company_store.go:200: Action: 4, Message: Owner 1 does not have any company.
